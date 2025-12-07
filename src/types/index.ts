@@ -66,7 +66,7 @@ export interface HintMarker {
 }
 
 export interface ScoreSnapshot {
-  minute: number;
+  transcriptIndex: number;
   scores: InterviewScores;
 }
 
