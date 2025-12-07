@@ -85,6 +85,7 @@ export function useVoiceInterview({
   getTestCases,
 }: UseVoiceInterviewOptions) {
   const [isConnected, setIsConnected] = useState(false);
+  const [isConnecting, setIsConnecting] = useState(false);
   const [hasDisconnected, setHasDisconnected] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -381,6 +382,7 @@ export function useVoiceInterview({
 
     try {
       setError(null);
+      setIsConnecting(true);
       clearTranscript();
       isSessionConfigured.current = false;
       assistantBuffer.current = "";
@@ -404,6 +406,7 @@ export function useVoiceInterview({
 
       ws.onopen = () => {
         console.log("[Interview] Connected");
+        setIsConnecting(false);
         setIsConnected(true);
       };
 
@@ -419,9 +422,13 @@ export function useVoiceInterview({
         }
       };
 
-      ws.onerror = () => setError("Connection error");
+      ws.onerror = () => {
+        setIsConnecting(false);
+        setError("Connection error");
+      };
       ws.onclose = (e) => {
         console.log("[Interview] Closed:", e.code);
+        setIsConnecting(false);
         setIsConnected(false);
         setHasDisconnected(true);
         if (e.code !== 1000) setError(`Closed: ${e.reason || e.code}`);
@@ -430,6 +437,7 @@ export function useVoiceInterview({
       wsRef.current = ws;
     } catch (e) {
       console.error("[Interview] Failed:", e);
+      setIsConnecting(false);
       setError(e instanceof Error ? e.message : "Failed to start");
     }
   }, [startCapture, send, handleMessage, clearTranscript]);
@@ -461,6 +469,7 @@ export function useVoiceInterview({
 
   return {
     isConnected,
+    isConnecting,
     hasDisconnected,
     isCapturing,
     audioLevel,

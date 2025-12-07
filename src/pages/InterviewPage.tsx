@@ -1,5 +1,6 @@
 import { useRef, useState, useCallback, useMemo, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
+import { Mic, Loader2, Clock } from "lucide-react";
 import {
   CodeEditor,
   InterviewPanel,
@@ -166,6 +167,7 @@ export function InterviewPage() {
 
   const {
     isConnected,
+    isConnecting,
     hasDisconnected,
     isCapturing,
     audioLevel,
@@ -237,8 +239,89 @@ export function InterviewPage() {
 
   const passCount = results.filter((r) => r.passed).length;
 
+  // Timer state
+  const [interviewStartTime, setInterviewStartTime] = useState<number | null>(null);
+  const [elapsedTime, setElapsedTime] = useState(0);
+
+  // Start timer when connected
+  useEffect(() => {
+    if (isConnected && !interviewStartTime) {
+      setInterviewStartTime(Date.now());
+    }
+  }, [isConnected, interviewStartTime]);
+
+  // Update elapsed time every second
+  useEffect(() => {
+    if (!interviewStartTime) return;
+
+    const interval = setInterval(() => {
+      setElapsedTime(Math.floor((Date.now() - interviewStartTime) / 1000));
+    }, 1000);
+
+    return () => clearInterval(interval);
+  }, [interviewStartTime]);
+
+  // Format elapsed time as mm:ss
+  const formatTime = (seconds: number) => {
+    const mins = Math.floor(seconds / 60);
+    const secs = seconds % 60;
+    return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+  };
+
+  // Determine if we should show the interview UI (connected or was connected before)
+  const showInterviewUI = isConnected || hasDisconnected;
+
   if (!interviewInput) {
     return null;
+  }
+
+  // Lobby screen - before interview starts
+  if (!showInterviewUI && !isConnecting) {
+    return (
+      <div className="h-screen w-screen flex items-center justify-center bg-[var(--bg-primary)]">
+        <div className="text-center">
+          <div className="w-20 h-20 rounded-full bg-[var(--primary-color)]/20 flex items-center justify-center mx-auto mb-6">
+            <Mic className="w-10 h-10 text-[var(--primary-color)]" />
+          </div>
+          <h1 className="text-2xl font-semibold text-[var(--text-primary)] mb-2">
+            Ready to Begin?
+          </h1>
+          <p className="text-[var(--text-secondary)] mb-8 max-w-md">
+            Click the button below to connect and start your coding interview.
+          </p>
+          <button
+            onClick={startInterview}
+            className="px-8 py-4 rounded-xl font-medium text-lg transition-all duration-200 flex items-center justify-center gap-3 mx-auto shadow-lg hover:shadow-xl"
+            style={{
+              backgroundColor: "var(--primary-color)",
+              color: "white",
+            }}
+          >
+            <Mic className="w-6 h-6" />
+            Start Interview
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  // Connecting screen
+  if (isConnecting && !isConnected) {
+    return (
+      <div className="h-screen w-screen flex items-center justify-center bg-[var(--bg-primary)]">
+        <div className="text-center">
+          <div className="w-20 h-20 rounded-full bg-[var(--primary-color)]/20 flex items-center justify-center mx-auto mb-6">
+            <Loader2 className="w-10 h-10 text-[var(--primary-color)] animate-spin" />
+          </div>
+          <h1 className="text-2xl font-semibold text-[var(--text-primary)] mb-2">
+            Connecting...
+          </h1>
+          <p className="text-[var(--text-secondary)]">
+            Establishing connection to the interview
+          </p>
+        </div>
+      </div>
+    );
   }
 
   return (
@@ -288,19 +371,29 @@ export function InterviewPage() {
 
       {/* Center: Code Editor + Test Panel */}
       <div className="flex-1 h-full min-w-0 flex flex-col gap-0 border-y border-[var(--border-color)] shadow-[var(--shadow-lg)] overflow-hidden bg-[var(--card-bg)]">
-        {/* Language Selector Header */}
-        <div className="flex items-center gap-3 px-4 py-2 border-b border-[var(--border-color)] bg-[var(--bg-secondary)]">
-          <label className="text-sm text-[var(--text-secondary)]">
-            Language:
-          </label>
-          <select
-            value={language}
-            onChange={(e) => handleLanguageChange(e.target.value as Language)}
-            className="px-2 py-1 text-sm bg-[var(--bg-primary)] border border-[var(--border-color)] rounded text-[var(--text-primary)] cursor-pointer"
-          >
-            <option value="javascript">JavaScript</option>
-            <option value="python">Python</option>
-          </select>
+        {/* Language Selector Header with Timer */}
+        <div className="flex items-center justify-between px-4 py-2 border-b border-[var(--border-color)] bg-[var(--bg-secondary)]">
+          <div className="flex items-center gap-3">
+            <label className="text-sm text-[var(--text-secondary)]">
+              Language:
+            </label>
+            <select
+              value={language}
+              onChange={(e) => handleLanguageChange(e.target.value as Language)}
+              className="px-2 py-1 text-sm bg-[var(--bg-primary)] border border-[var(--border-color)] rounded text-[var(--text-primary)] cursor-pointer"
+            >
+              <option value="javascript">JavaScript</option>
+              <option value="python">Python</option>
+            </select>
+          </div>
+          {interviewStartTime && (
+            <div className="flex items-center gap-2 px-3 py-1 rounded-lg bg-[var(--bg-primary)] border border-[var(--border-color)]">
+              <Clock className="w-4 h-4 text-[var(--text-secondary)]" />
+              <span className="text-sm font-mono text-[var(--text-primary)]">
+                {formatTime(elapsedTime)}
+              </span>
+            </div>
+          )}
         </div>
 
         {/* Code Editor */}
