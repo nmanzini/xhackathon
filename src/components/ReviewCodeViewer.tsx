@@ -71,6 +71,7 @@ export function ReviewCodeViewer({
   const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const flashedLinesRef = useRef<Set<string>>(new Set());
   const lastDirectionRef = useRef<"forward" | "backward">(direction);
+  const disposablesRef = useRef<{ dispose: () => void }[]>([]);
 
   if (direction !== lastDirectionRef.current) {
     flashedLinesRef.current.clear();
@@ -78,6 +79,9 @@ export function ReviewCodeViewer({
   }
 
   const handleEditorMount = (editor: editor.IStandaloneCodeEditor) => {
+    disposablesRef.current.forEach((d) => d.dispose());
+    disposablesRef.current = [];
+
     editorRef.current = editor;
     lastAppliedCodeRef.current = code;
 
@@ -98,9 +102,20 @@ export function ReviewCodeViewer({
     };
 
     setTimeout(updateScrollbarVisibility, 100);
-    editor.onDidChangeModelContent(updateScrollbarVisibility);
-    editor.onDidLayoutChange(updateScrollbarVisibility);
+    disposablesRef.current.push(
+      editor.onDidChangeModelContent(updateScrollbarVisibility)
+    );
+    disposablesRef.current.push(
+      editor.onDidLayoutChange(updateScrollbarVisibility)
+    );
   };
+
+  useEffect(() => {
+    return () => {
+      disposablesRef.current.forEach((d) => d.dispose());
+      disposablesRef.current = [];
+    };
+  }, []);
 
   useEffect(() => {
     const editor = editorRef.current;
