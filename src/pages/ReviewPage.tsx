@@ -77,17 +77,17 @@ export function ReviewPage() {
   const currentCode = mockInterviewData.transcript[timelinePosition].code;
 
   return (
-    <div className="h-screen w-screen flex flex-col bg-zinc-950">
+    <div className="h-screen w-screen flex flex-col bg-[var(--bg-primary)] transition-colors duration-300">
       <TimelineSlider
         max={mockInterviewData.transcript.length - 1}
         value={timelinePosition}
         onChange={setTimelinePosition}
       />
       <div className="flex-1 flex overflow-hidden">
-        <div className="w-1/2 h-full border-r border-zinc-700">
+        <div className="w-1/2 h-full border-r border-[var(--border-color)]">
           <TranscriptView entries={visibleTranscript} />
         </div>
-        <div className="w-1/2 h-full">
+        <div className="w-1/2 h-full bg-[var(--code-bg)]">
           <ReviewCodeViewer code={currentCode} />
         </div>
       </div>
