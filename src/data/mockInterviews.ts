@@ -42,8 +42,10 @@ export const mockInterviews: InterviewOutput[] = [
       functionName: "solution",
       starterCode: defaultStarterCode,
       testCases: [],
+      finalTestCases: [], // Mock interviews don't have final tests
     },
     compiledSystemPrompt: "You are an AI interviewer...",
+    finalTestResults: [], // Mock interviews don't have final test results
     transcript: [
       {
         role: "llm",
@@ -155,8 +157,10 @@ class BST {
       functionName: "solution",
       starterCode: defaultStarterCode,
       testCases: [],
+      finalTestCases: [], // Mock interviews don't have final tests
     },
     compiledSystemPrompt: "You are an AI interviewer...",
+    finalTestResults: [], // Mock interviews don't have final test results
     transcript: [
       {
         role: "llm",
@@ -224,8 +228,10 @@ function reverseList(head) {
       functionName: "solution",
       starterCode: defaultStarterCode,
       testCases: [],
+      finalTestCases: [], // Mock interviews don't have final tests
     },
     compiledSystemPrompt: "You are an AI interviewer...",
+    finalTestResults: [], // Mock interviews don't have final test results
     transcript: [
       {
         role: "llm",
@@ -346,8 +352,10 @@ function reverseList(head) {
       functionName: "solution",
       starterCode: defaultStarterCode,
       testCases: [],
+      finalTestCases: [], // Mock interviews don't have final tests
     },
     compiledSystemPrompt: "You are an AI interviewer...",
+    finalTestResults: [], // Mock interviews don't have final test results
     transcript: [
       {
         role: "llm",
@@ -398,8 +406,10 @@ function reverseList(head) {
       functionName: "solution",
       starterCode: defaultStarterCode,
       testCases: [],
+      finalTestCases: [], // Mock interviews don't have final tests
     },
     compiledSystemPrompt: "You are an AI interviewer...",
+    finalTestResults: [], // Mock interviews don't have final test results
     transcript: [
       {
         role: "llm",
@@ -539,8 +549,10 @@ function reverseList(head) {
       functionName: "solution",
       starterCode: defaultStarterCode,
       testCases: [],
+      finalTestCases: [], // Mock interviews don't have final tests
     },
     compiledSystemPrompt: "You are an AI interviewer...",
+    finalTestResults: [], // Mock interviews don't have final test results
     transcript: [
       {
         role: "llm",
@@ -616,8 +628,10 @@ function reverseList(head) {
       functionName: "solution",
       starterCode: defaultStarterCode,
       testCases: [],
+      finalTestCases: [], // Mock interviews don't have final tests
     },
     compiledSystemPrompt: "You are an AI interviewer...",
+    finalTestResults: [], // Mock interviews don't have final test results
     transcript: [
       {
         role: "llm",
@@ -682,8 +696,10 @@ function reverseList(head) {
       functionName: "solution",
       starterCode: defaultStarterCode,
       testCases: [],
+      finalTestCases: [], // Mock interviews don't have final tests
     },
     compiledSystemPrompt: "You are an AI interviewer...",
+    finalTestResults: [], // Mock interviews don't have final test results
     transcript: [
       {
         role: "llm",
@@ -816,8 +832,10 @@ function reverseList(head) {
       functionName: "solution",
       starterCode: defaultStarterCode,
       testCases: [],
+      finalTestCases: [], // Mock interviews don't have final tests
     },
     compiledSystemPrompt: "You are an AI interviewer...",
+    finalTestResults: [], // Mock interviews don't have final test results
     transcript: [
       {
         role: "llm",
@@ -944,8 +962,10 @@ function reverseList(head) {
       functionName: "solution",
       starterCode: defaultStarterCode,
       testCases: [],
+      finalTestCases: [], // Mock interviews don't have final tests
     },
     compiledSystemPrompt: "You are an AI interviewer...",
+    finalTestResults: [], // Mock interviews don't have final test results
     transcript: [
       {
         role: "llm",
@@ -1069,8 +1089,10 @@ function reverseList(head) {
       functionName: "solution",
       starterCode: defaultStarterCode,
       testCases: [],
+      finalTestCases: [], // Mock interviews don't have final tests
     },
     compiledSystemPrompt: "You are an AI interviewer...",
+    finalTestResults: [], // Mock interviews don't have final test results
     transcript: [
       {
         role: "llm",
@@ -1192,8 +1214,10 @@ function reverseList(head) {
       functionName: "solution",
       starterCode: defaultStarterCode,
       testCases: [],
+      finalTestCases: [], // Mock interviews don't have final tests
     },
     compiledSystemPrompt: "You are an AI interviewer...",
+    finalTestResults: [], // Mock interviews don't have final test results
     transcript: [
       {
         role: "llm",
@@ -1323,9 +1347,11 @@ function reverseList(head) {
       functionName: "solution",
       starterCode: defaultStarterCode,
       testCases: [],
+      finalTestCases: [], // Mock interviews don't have final tests
     },
     compiledSystemPrompt:
       "You are an AI interviewer conducting a comprehensive technical interview. Focus on system design, algorithm optimization, code quality, testing strategies, performance considerations, scalability concerns, error handling, edge cases, time complexity analysis, space complexity analysis, best practices, design patterns, maintainability, readability, documentation standards, code review processes, collaboration workflows, version control practices, continuous integration and deployment pipelines, monitoring and observability, security considerations, data privacy, API design principles, database optimization, caching strategies, load balancing, microservices architecture, distributed systems, concurrency and parallelism, memory management, garbage collection, network protocols, HTTP/HTTPS, RESTful API design, GraphQL, WebSocket connections, authentication and authorization, OAuth flows, JWT tokens, session management, encryption and hashing, SQL and NoSQL databases, indexing strategies, query optimization, transaction management, ACID properties, CAP theorem, eventual consistency, event-driven architecture, message queues, pub-sub patterns, service mesh, containerization, Docker, Kubernetes orchestration, cloud computing, AWS services, GCP services, Azure services, serverless architecture, function-as-a-service, infrastructure as code, Terraform, Ansible, monitoring tools, logging strategies, distributed tracing, APM tools, performance profiling, load testing, stress testing, chaos engineering, disaster recovery, backup strategies, data replication, sharding, partitioning, CDN usage, content delivery optimization, image optimization, lazy loading, code splitting, bundle optimization, tree shaking, minification, compression, HTTP/2 and HTTP/3, progressive web apps, mobile app development, responsive design, accessibility standards, WCAG compliance, SEO optimization, analytics integration, A/B testing, feature flags, canary deployments, blue-green deployments, rollback strategies, incident response, on-call rotations, post-mortem processes, knowledge sharing, technical writing, code documentation, API documentation, architecture decision records, RFC processes, and overall software engineering excellence.",
+    finalTestResults: [], // Mock interviews don't have final test results
     transcript: (() => {
       const baseTimestamp = Date.now() - 10800000;
       const entries: { role: "llm" | "user"; message: string; code: string; timestamp: number }[] = [];

@@ -58,4 +58,19 @@ Explanation: nums[0] + nums[1] = 2 + 7 = 9
   testCases: [
     { id: "1", input: [[2, 7, 11, 15], 9], expected: [0, 1] },
   ],
+
+  // Hidden test cases - run at the end for final evaluation
+  // User and LLM don't see these during the interview
+  finalTestCases: [
+    // Edge case: negative numbers
+    { id: "final-1", input: [[-1, -2, -3, -4, -5], -8], expected: [2, 4] },
+    // Edge case: target is 0
+    { id: "final-2", input: [[-3, 4, 3, 90], 0], expected: [0, 2] },
+    // Edge case: large numbers
+    { id: "final-3", input: [[1000000000, 999999999, 1], 1000000001], expected: [0, 2] },
+    // Edge case: duplicates
+    { id: "final-4", input: [[3, 3], 6], expected: [0, 1] },
+    // Edge case: minimum array size
+    { id: "final-5", input: [[1, 2], 3], expected: [0, 1] },
+  ],
 };
