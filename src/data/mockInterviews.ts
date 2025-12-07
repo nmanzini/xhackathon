@@ -9,6 +9,30 @@ export const mockInterviews: InterviewOutput[] = [
         "Implement a function to find the longest palindromic substring",
       userInfo: { name: "Alex Chen" },
       helpLevel: "medium",
+      expectedSolution: `function findLongestPalindrome(s) {
+  if (s.length < 2) return s;
+  
+  let longest = '';
+  
+  function expandAroundCenter(left, right) {
+    while (left >= 0 && right < s.length && s[left] === s[right]) {
+      left--;
+      right++;
+    }
+    return s.slice(left + 1, right);
+  }
+  
+  for (let i = 0; i < s.length; i++) {
+    const odd = expandAroundCenter(i, i);
+    const even = expandAroundCenter(i, i + 1);
+    const longer = odd.length > even.length ? odd : even;
+    if (longer.length > longest.length) {
+      longest = longer;
+    }
+  }
+  
+  return longest;
+}`,
     },
     compiledSystemPrompt: "You are an AI interviewer...",
     transcript: [
@@ -73,6 +97,52 @@ export const mockInterviews: InterviewOutput[] = [
         "Implement a binary search tree with insert and search operations",
       userInfo: { name: "Sarah Johnson" },
       helpLevel: "low",
+      expectedSolution: `class TreeNode {
+  constructor(value) {
+    this.value = value;
+    this.left = null;
+    this.right = null;
+  }
+}
+
+class BST {
+  constructor() {
+    this.root = null;
+  }
+
+  insert(value) {
+    const newNode = new TreeNode(value);
+    if (!this.root) {
+      this.root = newNode;
+      return this;
+    }
+    let current = this.root;
+    while (true) {
+      if (value < current.value) {
+        if (!current.left) {
+          current.left = newNode;
+          return this;
+        }
+        current = current.left;
+      } else {
+        if (!current.right) {
+          current.right = newNode;
+          return this;
+        }
+        current = current.right;
+      }
+    }
+  }
+
+  search(value) {
+    let current = this.root;
+    while (current) {
+      if (value === current.value) return true;
+      current = value < current.value ? current.left : current.right;
+    }
+    return false;
+  }
+}`,
     },
     compiledSystemPrompt: "You are an AI interviewer...",
     transcript: [
@@ -121,6 +191,24 @@ export const mockInterviews: InterviewOutput[] = [
       question: "Implement a function to reverse a linked list",
       userInfo: { name: "Michael Park" },
       helpLevel: "high",
+      expectedSolution: `class ListNode {
+  constructor(val) {
+    this.val = val;
+    this.next = null;
+  }
+}
+
+function reverseList(head) {
+  let prev = null;
+  let current = head;
+  while (current) {
+    const next = current.next;
+    current.next = prev;
+    prev = current;
+    current = next;
+  }
+  return prev;
+}`,
     },
     compiledSystemPrompt: "You are an AI interviewer...",
     transcript: [
@@ -158,6 +246,13 @@ export const mockInterviews: InterviewOutput[] = [
       question: "Implement a debounce function",
       userInfo: { name: "Emily Zhang" },
       helpLevel: "none",
+      expectedSolution: `function debounce(fn, delay) {
+  let timeoutId;
+  return function(...args) {
+    clearTimeout(timeoutId);
+    timeoutId = setTimeout(() => fn.apply(this, args), delay);
+  };
+}`,
     },
     compiledSystemPrompt: "You are an AI interviewer...",
     transcript: [
@@ -197,13 +292,39 @@ export const mockInterviews: InterviewOutput[] = [
         "Design and implement a highly scalable, fault-tolerant, distributed real-time collaborative code editor system that supports multiple users editing the same document simultaneously with operational transformation or CRDT (Conflict-free Replicated Data Types) algorithms, ensuring eventual consistency across all clients, handling network partitions gracefully, implementing proper conflict resolution strategies, maintaining document history with undo/redo functionality, supporting syntax highlighting for multiple programming languages, providing code completion and IntelliSense-like features, implementing proper authentication and authorization mechanisms, ensuring data persistence with both in-memory caching and persistent storage, handling large documents efficiently, optimizing for low latency, implementing proper rate limiting and throttling, supporting real-time presence indicators showing who is currently editing, implementing proper cursor synchronization, handling file operations like save, load, export, import, supporting multiple file formats, implementing proper error handling and recovery mechanisms, ensuring data security and encryption, implementing proper logging and monitoring, supporting plugin architecture for extensibility, implementing proper testing strategies including unit tests, integration tests, end-to-end tests, performance tests, and load tests, ensuring cross-platform compatibility, supporting offline mode with sync when connection is restored, implementing proper version control integration, supporting collaborative features like comments, suggestions, and code reviews, ensuring accessibility compliance, implementing proper internationalization and localization, supporting multiple themes and customization options, optimizing for mobile devices, implementing proper analytics and telemetry, ensuring GDPR and privacy compliance, and providing a seamless user experience with minimal latency and maximum reliability.",
       userInfo: { name: "Jordan Martinez" },
       helpLevel: "medium",
+      expectedSolution: `class CollaborativeEditor {
+  constructor() {
+    this.document = new Document();
+    this.crdt = new CRDTEngine();
+    this.connection = new WebSocketManager();
+    this.storage = new StorageManager();
+    this.presence = new PresenceService();
+    this.auth = new AuthManager();
+    this.permissions = new PermissionManager();
+    this.observability = new ObservabilityManager();
+  }
+}
+
+// Key components: CRDT for conflict resolution, WebSocket for real-time sync,
+// Multi-layer storage (Redis + PostgreSQL), JWT auth, RBAC permissions,
+// Virtual rendering for large docs, Web Workers for syntax highlighting,
+// Comprehensive testing and observability with OpenTelemetry.`,
     },
     compiledSystemPrompt:
       "You are an AI interviewer conducting a comprehensive technical interview. Focus on system design, algorithm optimization, code quality, testing strategies, performance considerations, scalability concerns, error handling, edge cases, time complexity analysis, space complexity analysis, best practices, design patterns, maintainability, readability, documentation standards, code review processes, collaboration workflows, version control practices, continuous integration and deployment pipelines, monitoring and observability, security considerations, data privacy, API design principles, database optimization, caching strategies, load balancing, microservices architecture, distributed systems, concurrency and parallelism, memory management, garbage collection, network protocols, HTTP/HTTPS, RESTful API design, GraphQL, WebSocket connections, authentication and authorization, OAuth flows, JWT tokens, session management, encryption and hashing, SQL and NoSQL databases, indexing strategies, query optimization, transaction management, ACID properties, CAP theorem, eventual consistency, event-driven architecture, message queues, pub-sub patterns, service mesh, containerization, Docker, Kubernetes orchestration, cloud computing, AWS services, GCP services, Azure services, serverless architecture, function-as-a-service, infrastructure as code, Terraform, Ansible, monitoring tools, logging strategies, distributed tracing, APM tools, performance profiling, load testing, stress testing, chaos engineering, disaster recovery, backup strategies, data replication, sharding, partitioning, CDN usage, content delivery optimization, image optimization, lazy loading, code splitting, bundle optimization, tree shaking, minification, compression, HTTP/2 and HTTP/3, progressive web apps, mobile app development, responsive design, accessibility standards, WCAG compliance, SEO optimization, analytics integration, A/B testing, feature flags, canary deployments, blue-green deployments, rollback strategies, incident response, on-call rotations, post-mortem processes, knowledge sharing, technical writing, code documentation, API documentation, architecture decision records, RFC processes, and overall software engineering excellence.",
     transcript: (() => {
       const baseTimestamp = Date.now() - 10800000;
-      const entries = [];
-      const messages = [
+      const entries: {
+        role: "llm" | "user";
+        message: string;
+        code: string;
+        timestamp: number;
+      }[] = [];
+      const messages: {
+        role: "llm" | "user";
+        message: string;
+        code: string;
+      }[] = [
         {
           role: "llm",
           message:

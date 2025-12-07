@@ -1,5 +1,5 @@
 import { BrowserRouter, Routes, Route } from "react-router-dom";
-import { AnalystPage } from "./pages/AnalystPage";
+import { AnalysisPage } from "./pages/AnalysisPage";
 import { InterviewPage } from "./pages/InterviewPage";
 import { InterviewListPage } from "./pages/InterviewListPage";
 import { ReviewPage } from "./pages/ReviewPage";
@@ -11,7 +11,7 @@ function App() {
         <Route path="/" element={<InterviewPage />} />
         <Route path="/reviews" element={<InterviewListPage />} />
         <Route path="/review/:id" element={<ReviewPage />} />
-        <Route path="/analyst/:id" element={<AnalystPage />} />
+        <Route path="/analysis/:id" element={<AnalysisPage />} />
       </Routes>
     </BrowserRouter>
   );

@@ -1,3 +1,3 @@
-export function AnalystPage() {
-  return <div>Analyst Page</div>;
+export function AnalysisPage() {
+  return <div>Analysis Page</div>;
 }
