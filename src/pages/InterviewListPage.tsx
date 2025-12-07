@@ -45,7 +45,7 @@ export function InterviewListPage() {
           filteredInterviews.map((interview) => {
             const startTime = interview.transcript[0]?.timestamp;
             const formattedDate = startTime
-              ? new Date(startTime).toLocaleDateString("en-US", {
+              ? new Date(startTime).toLocaleString("en-US", {
                   weekday: "short",
                   month: "short",
                   day: "numeric",
