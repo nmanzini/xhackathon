@@ -43,12 +43,14 @@ export function ReviewPage() {
     return () => container.removeEventListener("scroll", handleScroll);
   }, [totalSteps, interview]);
 
-  if (!interview) {
+  if (!interview || interview.transcript.length === 0) {
     return (
       <div className="h-screen w-screen flex items-center justify-center bg-[var(--bg-primary)]">
         <div className="text-center">
           <div className="text-xl text-[var(--text-primary)] mb-4">
-            Interview not found
+            {!interview
+              ? "Interview not found"
+              : "No transcript data available"}
           </div>
           <Link
             to="/reviews"
@@ -62,7 +64,7 @@ export function ReviewPage() {
   }
 
   const currentEntry = interview.transcript[timelinePosition];
-  const currentCode = currentEntry.code;
+  const currentCode = currentEntry?.code ?? "";
 
   return (
     <div
