@@ -128,14 +128,16 @@ export function InterviewPage() {
   });
 
   // Handle ending interview - save and navigate to reviews
-  const handleEndInterview = useCallback(() => {
+  const handleEndInterview = useCallback(async () => {
     // Stop the voice connection
     stopInterview();
     
-    // Create the interview output (code is already in each transcript entry)
-    const interviewOutput = createInterviewOutput(
+    // Create the interview output (runs final hidden tests)
+    const interviewOutput = await createInterviewOutput(
       DEFAULT_INTERVIEW,
-      getFinalTranscript()
+      getFinalTranscript(),
+      codeRef.current,
+      language
     );
     
     // Save to store
@@ -144,7 +146,7 @@ export function InterviewPage() {
     
     // Navigate to the analysis page for this interview
     navigate(`/analysis/${interviewOutput.id}`);
-  }, [stopInterview, getFinalTranscript, navigate]);
+  }, [stopInterview, getFinalTranscript, language, navigate]);
 
   // Wrapper to run tests and send results to AI
   const runAllAndNotifyAI = useCallback(async () => {

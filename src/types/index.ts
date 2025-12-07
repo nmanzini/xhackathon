@@ -18,6 +18,15 @@ export interface TestResult {
   error?: string;
 }
 
+export interface EnrichedTestResult {
+  id: string;
+  input: any[];
+  expected: any;
+  passed: boolean;
+  actual?: any;
+  error?: string;
+}
+
 export interface InterviewInput {
   instruction: string;
   question: string;
@@ -26,7 +35,8 @@ export interface InterviewInput {
   expectedSolution: string;
   functionName: string;
   starterCode: { javascript: string; python: string };
-  testCases: TestCase[];
+  testCases: TestCase[]; // Visible to user and LLM during interview
+  finalTestCases: TestCase[]; // Hidden tests for final evaluation
 }
 
 export type TranscriptEntryRole = "llm" | "user" | "test_run";
@@ -36,15 +46,7 @@ export interface TranscriptEntry {
   message: string;
   code: string;
   timestamp: number;
-  // For test run entries
-  testResults?: {
-    id: string;
-    input: any[];
-    expected: any;
-    actual?: any;
-    passed: boolean;
-    error?: string;
-  }[];
+  testResults?: EnrichedTestResult[];
 }
 
 export interface InterviewOutput {
@@ -52,6 +54,7 @@ export interface InterviewOutput {
   input: InterviewInput;
   compiledSystemPrompt: string;
   transcript: TranscriptEntry[];
+  finalTestResults: EnrichedTestResult[]; // Results from running finalTestCases on final code
 }
 
 export type Score = 1 | 2 | 3 | 4 | 5;

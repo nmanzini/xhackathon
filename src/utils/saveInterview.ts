@@ -1,6 +1,7 @@
-import type { InterviewOutput, InterviewInput, TranscriptEntry } from "../types";
+import type { InterviewOutput, InterviewInput, TranscriptEntry, EnrichedTestResult, TestCase, Language } from "../types";
 import type { TranscriptEntry as LiveTranscriptEntry } from "../hooks/useTranscript";
 import { buildSystemPrompt } from "./prompt";
+import { runTest } from "./codeRunner";
 
 /**
  * Convert live transcript entries to the format expected by InterviewOutput
@@ -41,6 +42,42 @@ function convertTranscript(liveTranscript: LiveTranscriptEntry[]): TranscriptEnt
 }
 
 /**
+ * Run final hidden test cases against the final code
+ */
+async function runFinalTests(
+  code: string,
+  language: Language,
+  functionName: string,
+  finalTestCases: TestCase[]
+): Promise<EnrichedTestResult[]> {
+  const results: EnrichedTestResult[] = [];
+  
+  for (const testCase of finalTestCases) {
+    try {
+      const result = await runTest(code, language, functionName, testCase);
+      results.push({
+        id: testCase.id,
+        input: testCase.input,
+        expected: testCase.expected,
+        passed: result.passed,
+        actual: result.actual,
+        error: result.error,
+      });
+    } catch (error) {
+      results.push({
+        id: testCase.id,
+        input: testCase.input,
+        expected: testCase.expected,
+        passed: false,
+        error: error instanceof Error ? error.message : String(error),
+      });
+    }
+  }
+  
+  return results;
+}
+
+/**
  * Generate a unique ID for the interview
  */
 function generateInterviewId(): string {
@@ -50,18 +87,29 @@ function generateInterviewId(): string {
 /**
  * Save completed interview to storage
  */
-export function createInterviewOutput(
+export async function createInterviewOutput(
   interviewInput: InterviewInput,
-  liveTranscript: LiveTranscriptEntry[]
-): InterviewOutput {
+  liveTranscript: LiveTranscriptEntry[],
+  finalCode: string,
+  language: Language
+): Promise<InterviewOutput> {
   const transcript = convertTranscript(liveTranscript);
   const compiledSystemPrompt = buildSystemPrompt(interviewInput);
+  
+  // Run final hidden tests on the user's final code
+  const finalTestResults = await runFinalTests(
+    finalCode,
+    language,
+    interviewInput.functionName,
+    interviewInput.finalTestCases
+  );
   
   return {
     id: generateInterviewId(),
     input: interviewInput,
     compiledSystemPrompt,
     transcript,
+    finalTestResults,
   };
 }
 
