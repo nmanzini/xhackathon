@@ -25,7 +25,7 @@ const TOOLS = [
   {
     type: "function",
     name: "get_code",
-    description: "Get the candidate's current code from the editor. Call this whenever you want to see what they've written or when they ask you to look at their code.",
+    description: "Get the candidate's current code from the editor AND the current test cases. Call this whenever you want to see what they've written, when they ask you to look at their code, or before adding new test cases to understand the test format.",
     parameters: {
       type: "object",
       properties: {},
@@ -45,16 +45,16 @@ const TOOLS = [
   {
     type: "function",
     name: "add_test_case",
-    description: "Add a new test case to validate the candidate's code. Use this to create edge cases or examples that will help the candidate understand issues with their solution.",
+    description: "Add a new test case to validate the candidate's code. Use this to create edge cases or examples that will help the candidate understand issues with their solution. IMPORTANT: Look at existing test cases first to understand the exact input/output format. The 'input' is an array of function arguments, and 'expected' is the direct return value (not wrapped in an array).",
     parameters: {
       type: "object",
       properties: {
         input: {
           type: "array",
-          description: "Array of function arguments (e.g., [[2,7,11,15], 9] for two_sum(nums, target))",
+          description: "Array of function arguments. For reverse_string(s), if s=[\"a\"], then input should be [[\"a\"]] (array containing one argument which is the array [\"a\"]). For two_sum(nums, target) where nums=[2,7] and target=9, input would be [[2,7], 9].",
         },
         expected: {
-          description: "Expected return value from the function",
+          description: "Expected return value from the function (NOT wrapped in an array). For reverse_string([\"a\"]), expected is [\"a\"] NOT [[\"a\"]]. For two_sum returning indices, expected is [0,1] NOT [[0,1]].",
         },
       },
       required: ["input", "expected"],
@@ -163,12 +163,18 @@ export function useVoiceInterview({
 
         if (toolName === "get_code") {
           const code = codeRef.current;
+          const testCases = getTestCases();
           console.log("[Interview] Returning code:", code.substring(0, 100) + "...");
           
           // Add to UI transcript so user sees when AI checks code
           addCodeSent(code);
           
-          output = `Language: ${language}\n\nCode:\n${code || "(empty - no code written yet)"}`;
+          // Include test cases to help AI understand format
+          const testCasesList = testCases.map((tc, idx) => 
+            `Test ${idx + 1}: input=${JSON.stringify(tc.input)}, expected=${JSON.stringify(tc.expected)}`
+          ).join("\n");
+          
+          output = `Language: ${language}\n\nCode:\n${code || "(empty - no code written yet)"}\n\nExisting Test Cases:\n${testCasesList}`;
         } 
         else if (toolName === "run_tests") {
           console.log("[Interview] AI running tests...");
@@ -324,15 +330,9 @@ export function useVoiceInterview({
               continue;
             }
             
-            // Skip audio transcripts that contain the code injection echo
-            if (content.type === "input_audio" && content.transcript?.includes("[Current Code]")) {
-              console.log("[Interview] Skipping audio with code injection feedback");
-              continue;
-            }
-            
-            // Skip audio transcripts that contain test results echo
-            if (content.type === "input_audio" && content.transcript?.includes("[Test Results]")) {
-              console.log("[Interview] Skipping audio with test results feedback");
+            // Skip automatic test results in transcript
+            if (content.type === "input_text" && content.text?.startsWith("[Test Results]")) {
+              console.log("[Interview] Skipping test results injection from transcript");
               continue;
             }
             
@@ -343,6 +343,22 @@ export function useVoiceInterview({
             }
             if (!content.transcript) {
               console.log("[Interview] Skipping: no transcript");
+              continue;
+            }
+            
+            // Skip audio transcripts that contain code injection markers
+            // (API sometimes echoes our injections back as audio)
+            if (content.transcript.includes("[Current Code]") || 
+                content.transcript.includes("```python") ||
+                content.transcript.includes("```javascript") ||
+                content.transcript.includes("```typescript")) {
+              console.log("[Interview] Skipping audio with code injection feedback");
+              continue;
+            }
+            
+            // Skip audio transcripts that contain test results echo
+            if (content.transcript.includes("[Test Results]")) {
+              console.log("[Interview] Skipping audio with test results feedback");
               continue;
             }
             

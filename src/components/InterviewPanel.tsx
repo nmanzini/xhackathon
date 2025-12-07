@@ -1,4 +1,4 @@
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import type { TranscriptEntry } from "../hooks/useTranscript";
 
 interface InterviewPanelProps {
@@ -23,11 +23,24 @@ export function InterviewPanel({
   hideHeader = false,
 }: InterviewPanelProps) {
   const transcriptEndRef = useRef<HTMLDivElement>(null);
+  const [expandedCodeBlocks, setExpandedCodeBlocks] = useState<Set<number>>(new Set());
 
   // Auto-scroll to bottom when transcript updates
   useEffect(() => {
     transcriptEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [transcript]);
+
+  const toggleCodeBlock = (index: number) => {
+    setExpandedCodeBlocks(prev => {
+      const newSet = new Set(prev);
+      if (newSet.has(index)) {
+        newSet.delete(index);
+      } else {
+        newSet.add(index);
+      }
+      return newSet;
+    });
+  };
 
   return (
     <div
@@ -39,46 +52,49 @@ export function InterviewPanel({
     >
       {/* Header - compact version when hideHeader */}
       {!hideHeader && (
-        <div className="p-4 border-b border-[var(--border-color)] flex items-center gap-3">
-          <div
-            className="w-8 h-8 rounded-lg flex items-center justify-center"
-            style={{
-              backgroundColor: isConnected
-                ? "rgba(91, 179, 216, 0.15)"
-                : "rgba(91, 179, 216, 0.1)",
-            }}
-          >
-            <svg
-              className="w-4 h-4"
-              style={{ color: "var(--invite-color)" }}
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
+        <div className="p-6 border-b border-[var(--border-color)] bg-[var(--card-bg)]">
+          <div className="flex items-center gap-4">
+            <div
+              className="w-12 h-12 rounded-xl flex items-center justify-center shadow-[var(--shadow-md)] transition-all duration-200"
+              style={{
+                backgroundColor: isConnected
+                  ? "rgba(91, 179, 216, 0.2)"
+                  : "rgba(91, 179, 216, 0.1)",
+              }}
             >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z"
-              />
-            </svg>
-          </div>
-          <div>
-            <h2 className="text-lg font-semibold text-[var(--text-primary)]">
-              Voice Interviewer
-            </h2>
-            <div className="flex items-center gap-2 mt-0.5">
-              <div
-                className="w-2 h-2 rounded-full transition-colors"
-                style={{
-                  backgroundColor: isConnected
-                    ? "var(--success-color)"
-                    : "var(--text-disabled)",
-                }}
-              />
-              <span className="text-sm text-[var(--text-secondary)]">
-                {isConnected ? "Connected" : "Disconnected"}
-              </span>
+              <svg
+                className="w-6 h-6"
+                style={{ color: "var(--invite-color)" }}
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z"
+                />
+              </svg>
+            </div>
+            <div className="flex-1">
+              <h2 className="text-xl font-semibold text-[var(--text-primary)] mb-1">
+                Interview
+              </h2>
+              <div className="flex items-center gap-2.5">
+                <div
+                  className={`w-2.5 h-2.5 rounded-full transition-all duration-300 ${isConnected ? 'animate-pulse' : ''}`}
+                  style={{
+                    backgroundColor: isConnected
+                      ? "var(--success-color)"
+                      : "var(--text-disabled)",
+                    boxShadow: isConnected ? '0 0 8px var(--success-color)' : 'none',
+                  }}
+                />
+                <span className="text-sm font-medium text-[var(--text-secondary)]">
+                  {isConnected ? "Connected" : "Disconnected"}
+                </span>
+              </div>
             </div>
           </div>
         </div>
@@ -86,16 +102,17 @@ export function InterviewPanel({
       
       {/* Compact status bar when header is hidden */}
       {hideHeader && (
-        <div className="px-3 py-2 border-b border-[var(--border-color)] flex items-center gap-2">
+        <div className="px-4 py-3 border-b border-[var(--border-color)] bg-[var(--card-bg)] flex items-center gap-3">
           <div
-            className="w-2 h-2 rounded-full transition-colors"
+            className={`w-2.5 h-2.5 rounded-full transition-all duration-300 ${isConnected ? 'animate-pulse' : ''}`}
             style={{
               backgroundColor: isConnected
                 ? "var(--success-color)"
                 : "var(--text-disabled)",
+              boxShadow: isConnected ? '0 0 8px var(--success-color)' : 'none',
             }}
           />
-          <span className="text-xs text-[var(--text-secondary)]">
+          <span className="text-sm font-medium text-[var(--text-secondary)]">
             {isConnected ? "Connected" : "Disconnected"}
           </span>
         </div>
@@ -103,24 +120,25 @@ export function InterviewPanel({
 
       {/* Audio Level Indicator */}
       {isCapturing && (
-        <div className="px-4 py-3 border-b border-[var(--border-color)] bg-[var(--slider-bg-start)]">
-          <div className="flex items-center gap-3">
-            <div className="flex items-center gap-1">
+        <div className="px-6 py-4 border-b border-[var(--border-color)] bg-gradient-to-r from-[var(--slider-bg-start)] to-[var(--slider-bg-end)]">
+          <div className="flex items-center gap-4">
+            <div className="flex items-center gap-1.5">
               {[...Array(5)].map((_, i) => (
                 <div
                   key={i}
-                  className="w-1 rounded-full transition-all duration-75"
+                  className="w-1.5 rounded-full transition-all duration-100 shadow-sm"
                   style={{
-                    height: `${12 + i * 4}px`,
+                    height: `${16 + i * 5}px`,
                     backgroundColor:
                       audioLevel > i * 0.1
                         ? "var(--success-color)"
                         : "var(--border-color)",
+                    boxShadow: audioLevel > i * 0.1 ? '0 2px 8px rgba(16, 185, 129, 0.3)' : 'none',
                   }}
                 />
               ))}
             </div>
-            <span className="text-sm text-[var(--text-secondary)]">
+            <span className="text-base font-medium text-[var(--text-primary)]">
               {audioLevel > 0.05 ? "Listening..." : "Speak now"}
             </span>
           </div>
@@ -143,15 +161,14 @@ export function InterviewPanel({
       )}
 
       {/* Transcript */}
-      <div className="flex-1 p-4 overflow-y-auto">
-        <h3 className="text-xs uppercase tracking-wide font-medium text-[var(--text-secondary)] mb-3">
-          Transcript
-        </h3>
-        <div className="space-y-3">
+      <div className="flex-1 p-6 overflow-y-auto bg-[var(--bg-primary)]">
+        <div className="max-w-2xl mx-auto space-y-4">
           {transcript.length === 0 ? (
-            <p className="text-sm text-[var(--text-disabled)] italic">
-              Start the interview to begin the conversation...
-            </p>
+            <div className="text-center py-12">
+              <p className="text-base text-[var(--text-disabled)] italic">
+                Start the interview to begin the conversation...
+              </p>
+            </div>
           ) : (
             transcript.map((entry, index) => {
               // Determine colors and labels based on role
@@ -172,11 +189,11 @@ export function InterviewPanel({
               
               const getLabel = () => {
                 switch (entry.role) {
-                  case "assistant": return "🤖 Interviewer";
+                  case "assistant": return "🤖 AI Interviewer";
                   case "code": return "📄 Code Sent";
                   case "tool": return `🔧 ${entry.toolName === "run_tests" ? "Tests Run" : entry.toolName === "add_test_case" ? "Test Added" : entry.toolName || "Tool"}`;
                   case "test_run": return "🧪 Test Run";
-                  default: return "👤 You";
+                  default: return "👤 Candidate";
                 }
               };
               
@@ -185,44 +202,66 @@ export function InterviewPanel({
               return (
                 <div
                   key={index}
-                  className="p-3 rounded-lg border border-[var(--border-color)] shadow-[var(--shadow-sm)] transition-all duration-200"
+                  className="p-6 rounded-xl border shadow-[var(--shadow-lg)] transition-all duration-300 hover:shadow-[var(--shadow-xl)]"
                   style={{
                     backgroundColor: style.bg,
-                    borderLeftWidth: "3px",
+                    borderLeftWidth: "4px",
                     borderLeftColor: style.border,
+                    borderColor: "var(--border-color)",
                   }}
                 >
-                  <div className="flex items-center gap-2 mb-1">
-                    <span className="text-xs font-medium" style={{ color: style.color }}>
+                  <div className="text-sm font-mono text-[var(--text-secondary)] mb-3 flex items-center gap-2">
+                    <span className="font-medium" style={{ color: style.color }}>
                       {getLabel()}
                     </span>
-                    <span className="text-xs text-[var(--text-disabled)]">
+                    <span>•</span>
+                    <span>
                       {new Date(entry.timestamp).toLocaleTimeString()}
                     </span>
                   </div>
                   {entry.role === "code" ? (
-                    <pre className="text-xs font-mono overflow-auto max-h-40 whitespace-pre-wrap p-2 rounded text-[var(--text-secondary)] bg-[var(--bg-primary)]">
-                      {entry.content}
-                    </pre>
+                    <div>
+                      <button
+                        onClick={() => toggleCodeBlock(index)}
+                        className="w-full text-left flex items-center justify-between p-3 rounded-lg bg-[var(--bg-primary)] border border-[var(--border-color)] hover:bg-[var(--card-bg-hover)] transition-colors"
+                      >
+                        <span className="text-sm font-medium text-[var(--text-primary)]">
+                          {expandedCodeBlocks.has(index) ? "Hide code" : "View code"} ({entry.content.split('\n').length} lines)
+                        </span>
+                        <svg
+                          className={`w-5 h-5 text-[var(--text-secondary)] transition-transform ${expandedCodeBlocks.has(index) ? 'rotate-180' : ''}`}
+                          fill="none"
+                          stroke="currentColor"
+                          viewBox="0 0 24 24"
+                        >
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                        </svg>
+                      </button>
+                      {expandedCodeBlocks.has(index) && (
+                        <pre className="mt-2 text-sm font-mono overflow-auto max-h-60 whitespace-pre-wrap p-4 rounded-lg text-[var(--text-secondary)] bg-[var(--bg-primary)] border border-[var(--border-color)]">
+                          {entry.content}
+                        </pre>
+                      )}
+                    </div>
                   ) : entry.role === "test_run" && entry.testResults ? (
-                    <div className="space-y-1">
-                      <p className="text-sm text-[var(--text-primary)] mb-2">
+                    <div className="space-y-2">
+                      <p className="text-base leading-relaxed text-[var(--text-primary)] mb-3">
                         {entry.content}
                       </p>
-                      <div className="space-y-1 text-xs">
+                      <div className="space-y-2 text-sm">
                         {entry.testResults.map((result, idx) => (
                           <div 
                             key={result.id}
-                            className={`p-2 rounded ${result.passed ? 'bg-emerald-500/10' : 'bg-red-500/10'}`}
+                            className={`p-3 rounded-lg border ${result.passed ? 'bg-emerald-500/10 border-emerald-500/30' : 'bg-red-500/10 border-red-500/30'}`}
                           >
-                            <div className="flex items-center gap-2">
+                            <div className="flex items-center gap-2 font-medium">
                               <span>{result.passed ? '✓' : '✗'}</span>
                               <span>Test {idx + 1}</span>
                             </div>
                             {!result.passed && (
-                              <div className="mt-1 ml-5 text-[var(--text-secondary)]">
-                                <div>Expected: {JSON.stringify(result.expected)}</div>
-                                <div>Got: {result.actual !== undefined ? JSON.stringify(result.actual) : result.error}</div>
+                              <div className="mt-2 ml-6 text-[var(--text-secondary)] space-y-1">
+                                <div>Expected: {result.expected !== undefined ? JSON.stringify(result.expected) : '(undefined)'}</div>
+                                <div>Got: {result.actual !== undefined ? JSON.stringify(result.actual) : result.error || '(undefined)'}</div>
                               </div>
                             )}
                           </div>
@@ -230,7 +269,7 @@ export function InterviewPanel({
                       </div>
                     </div>
                   ) : (
-                    <p className="text-sm text-[var(--text-primary)]">
+                    <p className="text-base leading-relaxed text-[var(--text-primary)]">
                       {entry.content}
                     </p>
                   )}
