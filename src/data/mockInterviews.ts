@@ -45,7 +45,12 @@ export const mockInterviews: InterviewOutput[] = [
       finalTestCases: [], // Mock interviews don't have final tests
     },
     compiledSystemPrompt: "You are an AI interviewer...",
-    finalTestResults: [], // Mock interviews don't have final test results
+    finalTestResults: [
+      { id: "1", input: ["babad"], expected: "bab", passed: true, actual: "bab" },
+      { id: "2", input: ["cbbd"], expected: "bb", passed: true, actual: "bb" },
+      { id: "3", input: ["a"], expected: "a", passed: true, actual: "a" },
+      { id: "4", input: ["ac"], expected: "a", passed: true, actual: "a" },
+    ],
     transcript: [
       {
         role: "llm",
@@ -160,7 +165,10 @@ class BST {
       finalTestCases: [], // Mock interviews don't have final tests
     },
     compiledSystemPrompt: "You are an AI interviewer...",
-    finalTestResults: [], // Mock interviews don't have final test results
+    finalTestResults: [
+      { id: "1", input: ["test"], expected: "result", passed: true, actual: "result" },
+      { id: "2", input: ["test2"], expected: "result2", passed: true, actual: "result2" },
+    ],
     transcript: [
       {
         role: "llm",
@@ -231,7 +239,10 @@ function reverseList(head) {
       finalTestCases: [], // Mock interviews don't have final tests
     },
     compiledSystemPrompt: "You are an AI interviewer...",
-    finalTestResults: [], // Mock interviews don't have final test results
+    finalTestResults: [
+      { id: "1", input: ["test"], expected: "result", passed: true, actual: "result" },
+      { id: "2", input: ["test2"], expected: "result2", passed: true, actual: "result2" },
+    ],
     transcript: [
       {
         role: "llm",
@@ -355,7 +366,10 @@ function reverseList(head) {
       finalTestCases: [], // Mock interviews don't have final tests
     },
     compiledSystemPrompt: "You are an AI interviewer...",
-    finalTestResults: [], // Mock interviews don't have final test results
+    finalTestResults: [
+      { id: "1", input: ["test"], expected: "result", passed: true, actual: "result" },
+      { id: "2", input: ["test2"], expected: "result2", passed: true, actual: "result2" },
+    ],
     transcript: [
       {
         role: "llm",
@@ -409,7 +423,10 @@ function reverseList(head) {
       finalTestCases: [], // Mock interviews don't have final tests
     },
     compiledSystemPrompt: "You are an AI interviewer...",
-    finalTestResults: [], // Mock interviews don't have final test results
+    finalTestResults: [
+      { id: "1", input: ["test"], expected: "result", passed: true, actual: "result" },
+      { id: "2", input: ["test2"], expected: "result2", passed: true, actual: "result2" },
+    ],
     transcript: [
       {
         role: "llm",
@@ -552,7 +569,10 @@ function reverseList(head) {
       finalTestCases: [], // Mock interviews don't have final tests
     },
     compiledSystemPrompt: "You are an AI interviewer...",
-    finalTestResults: [], // Mock interviews don't have final test results
+    finalTestResults: [
+      { id: "1", input: ["test"], expected: "result", passed: true, actual: "result" },
+      { id: "2", input: ["test2"], expected: "result2", passed: true, actual: "result2" },
+    ],
     transcript: [
       {
         role: "llm",
@@ -631,7 +651,10 @@ function reverseList(head) {
       finalTestCases: [], // Mock interviews don't have final tests
     },
     compiledSystemPrompt: "You are an AI interviewer...",
-    finalTestResults: [], // Mock interviews don't have final test results
+    finalTestResults: [
+      { id: "1", input: ["test"], expected: "result", passed: true, actual: "result" },
+      { id: "2", input: ["test2"], expected: "result2", passed: true, actual: "result2" },
+    ],
     transcript: [
       {
         role: "llm",
@@ -699,7 +722,10 @@ function reverseList(head) {
       finalTestCases: [], // Mock interviews don't have final tests
     },
     compiledSystemPrompt: "You are an AI interviewer...",
-    finalTestResults: [], // Mock interviews don't have final test results
+    finalTestResults: [
+      { id: "1", input: ["test"], expected: "result", passed: true, actual: "result" },
+      { id: "2", input: ["test2"], expected: "result2", passed: true, actual: "result2" },
+    ],
     transcript: [
       {
         role: "llm",
@@ -835,7 +861,10 @@ function reverseList(head) {
       finalTestCases: [], // Mock interviews don't have final tests
     },
     compiledSystemPrompt: "You are an AI interviewer...",
-    finalTestResults: [], // Mock interviews don't have final test results
+    finalTestResults: [
+      { id: "1", input: ["test"], expected: "result", passed: true, actual: "result" },
+      { id: "2", input: ["test2"], expected: "result2", passed: true, actual: "result2" },
+    ],
     transcript: [
       {
         role: "llm",
@@ -965,7 +994,10 @@ function reverseList(head) {
       finalTestCases: [], // Mock interviews don't have final tests
     },
     compiledSystemPrompt: "You are an AI interviewer...",
-    finalTestResults: [], // Mock interviews don't have final test results
+    finalTestResults: [
+      { id: "1", input: ["test"], expected: "result", passed: true, actual: "result" },
+      { id: "2", input: ["test2"], expected: "result2", passed: true, actual: "result2" },
+    ],
     transcript: [
       {
         role: "llm",
@@ -1092,7 +1124,10 @@ function reverseList(head) {
       finalTestCases: [], // Mock interviews don't have final tests
     },
     compiledSystemPrompt: "You are an AI interviewer...",
-    finalTestResults: [], // Mock interviews don't have final test results
+    finalTestResults: [
+      { id: "1", input: ["test"], expected: "result", passed: true, actual: "result" },
+      { id: "2", input: ["test2"], expected: "result2", passed: true, actual: "result2" },
+    ],
     transcript: [
       {
         role: "llm",
@@ -1217,7 +1252,10 @@ function reverseList(head) {
       finalTestCases: [], // Mock interviews don't have final tests
     },
     compiledSystemPrompt: "You are an AI interviewer...",
-    finalTestResults: [], // Mock interviews don't have final test results
+    finalTestResults: [
+      { id: "1", input: ["test"], expected: "result", passed: true, actual: "result" },
+      { id: "2", input: ["test2"], expected: "result2", passed: true, actual: "result2" },
+    ],
     transcript: [
       {
         role: "llm",
@@ -1351,7 +1389,10 @@ function reverseList(head) {
     },
     compiledSystemPrompt:
       "You are an AI interviewer conducting a comprehensive technical interview. Focus on system design, algorithm optimization, code quality, testing strategies, performance considerations, scalability concerns, error handling, edge cases, time complexity analysis, space complexity analysis, best practices, design patterns, maintainability, readability, documentation standards, code review processes, collaboration workflows, version control practices, continuous integration and deployment pipelines, monitoring and observability, security considerations, data privacy, API design principles, database optimization, caching strategies, load balancing, microservices architecture, distributed systems, concurrency and parallelism, memory management, garbage collection, network protocols, HTTP/HTTPS, RESTful API design, GraphQL, WebSocket connections, authentication and authorization, OAuth flows, JWT tokens, session management, encryption and hashing, SQL and NoSQL databases, indexing strategies, query optimization, transaction management, ACID properties, CAP theorem, eventual consistency, event-driven architecture, message queues, pub-sub patterns, service mesh, containerization, Docker, Kubernetes orchestration, cloud computing, AWS services, GCP services, Azure services, serverless architecture, function-as-a-service, infrastructure as code, Terraform, Ansible, monitoring tools, logging strategies, distributed tracing, APM tools, performance profiling, load testing, stress testing, chaos engineering, disaster recovery, backup strategies, data replication, sharding, partitioning, CDN usage, content delivery optimization, image optimization, lazy loading, code splitting, bundle optimization, tree shaking, minification, compression, HTTP/2 and HTTP/3, progressive web apps, mobile app development, responsive design, accessibility standards, WCAG compliance, SEO optimization, analytics integration, A/B testing, feature flags, canary deployments, blue-green deployments, rollback strategies, incident response, on-call rotations, post-mortem processes, knowledge sharing, technical writing, code documentation, API documentation, architecture decision records, RFC processes, and overall software engineering excellence.",
-    finalTestResults: [], // Mock interviews don't have final test results
+    finalTestResults: [
+      { id: "1", input: ["test"], expected: "result", passed: true, actual: "result" },
+      { id: "2", input: ["test2"], expected: "result2", passed: true, actual: "result2" },
+    ],
     transcript: (() => {
       const baseTimestamp = Date.now() - 10800000;
       const entries: {
@@ -1515,7 +1556,11 @@ function reverseList(head) {
       finalTestCases: [],
     },
     compiledSystemPrompt: "You are an AI interviewer...",
-    finalTestResults: [],
+    finalTestResults: [
+      { id: "1", input: [[2, 7, 11, 15], 9], expected: [0, 1], passed: true, actual: [0, 1] },
+      { id: "2", input: [[3, 2, 4], 6], expected: [1, 2], passed: true, actual: [1, 2] },
+      { id: "3", input: [[3, 3], 6], expected: [0, 1], passed: true, actual: [0, 1] },
+    ],
     transcript: (() => {
       const baseTimestamp = Date.now() - 360000;
       return [

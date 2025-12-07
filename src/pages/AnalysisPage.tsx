@@ -241,6 +241,87 @@ function OutcomeCard({ outcome, explanation }: OutcomeCardProps) {
   );
 }
 
+interface TestResultsCardProps {
+  passed: number;
+  total: number;
+}
+
+function TestResultsCard({ passed, total }: TestResultsCardProps) {
+  const percentage = total > 0 ? (passed / total) * 100 : 100;
+  const allPassed = passed === total;
+  const color = allPassed
+    ? "var(--success-color)"
+    : percentage >= 50
+    ? "var(--warning-color)"
+    : "var(--alert-color)";
+
+  return (
+    <div
+      className="h-full p-6 rounded-xl border border-[var(--border-color)] bg-[var(--card-bg)] shadow-[var(--shadow-md)] transition-all duration-200 hover:shadow-[var(--shadow-lg)]"
+      style={{ borderLeftWidth: "4px", borderLeftColor: color }}
+    >
+      <div className="flex items-center gap-3 mb-4">
+        <div
+          className="w-10 h-10 rounded-lg flex items-center justify-center"
+          style={{ backgroundColor: `${color}20`, color }}
+        >
+          <svg
+            className="w-5 h-5"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth={2}
+              d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
+            />
+          </svg>
+        </div>
+        <h3 className="text-sm font-medium text-[var(--text-secondary)] uppercase tracking-wide">
+          Test Results
+        </h3>
+      </div>
+
+      <div className="flex items-baseline gap-2 mb-1">
+        <span className="text-4xl font-bold" style={{ color }}>
+          {passed}
+        </span>
+        <span className="text-lg text-[var(--text-disabled)]">/ {total}</span>
+      </div>
+      <div className="text-sm font-medium mb-4" style={{ color }}>
+        {allPassed ? "All Tests Passed" : `${Math.round(percentage)}% Passing`}
+      </div>
+
+      <div className="pt-4 border-t border-[var(--border-color)]">
+        <div className="flex items-center justify-between mb-2">
+          <span className="text-sm text-[var(--text-secondary)]">Progress</span>
+          <span className="text-sm font-medium" style={{ color }}>
+            {passed} passed, {total - passed} failed
+          </span>
+        </div>
+        <div className="h-3 rounded-full bg-[var(--border-color)] overflow-hidden flex">
+          {(passed > 0 || total === 0) && (
+            <div
+              className="h-full bg-[var(--success-color)] transition-all duration-500"
+              style={{
+                width: total === 0 ? "100%" : `${(passed / total) * 100}%`,
+              }}
+            />
+          )}
+          {total - passed > 0 && (
+            <div
+              className="h-full bg-[var(--alert-color)] transition-all duration-500"
+              style={{ width: `${((total - passed) / total) * 100}%` }}
+            />
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
 function formatRelativeTime(ms: number): string {
   const minutes = Math.floor(ms / 60000);
   const seconds = Math.floor((ms % 60000) / 1000);
@@ -448,11 +529,18 @@ export function AnalysisPage() {
 
         {analysis && (
           <div className="space-y-6">
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
               <CombinedScoresCard
                 overall={analysis.finalScores.overall}
                 communication={analysis.finalScores.communication}
                 thoughtProcess={analysis.finalScores.thoughtProcess}
+              />
+              <TestResultsCard
+                passed={
+                  (interview.finalTestResults ?? []).filter((t) => t.passed)
+                    .length
+                }
+                total={(interview.finalTestResults ?? []).length}
               />
               <div className="lg:col-span-2">
                 <OutcomeCard
