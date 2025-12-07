@@ -1,7 +1,12 @@
 import { useState, useEffect } from "react";
 
+const FORCE_LIGHT_THEME = true;
+
 export function useSystemTheme(): "light" | "dark" {
   const [theme, setTheme] = useState<"light" | "dark">(() => {
+    if (FORCE_LIGHT_THEME) {
+      return "light";
+    }
     if (typeof window === "undefined") {
       return "light";
     }
@@ -11,6 +16,9 @@ export function useSystemTheme(): "light" | "dark" {
   });
 
   useEffect(() => {
+    if (FORCE_LIGHT_THEME) {
+      return;
+    }
     const mediaQuery = window.matchMedia("(prefers-color-scheme: dark)");
 
     const handleChange = (e: MediaQueryListEvent) => {

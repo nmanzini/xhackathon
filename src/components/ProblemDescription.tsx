@@ -3,7 +3,10 @@ interface ProblemDescriptionProps {
   description: string;
 }
 
-export function ProblemDescription({ title, description }: ProblemDescriptionProps) {
+export function ProblemDescription({
+  title,
+  description,
+}: ProblemDescriptionProps) {
   return (
     <div
       className="h-full flex flex-col overflow-hidden"
@@ -32,11 +35,15 @@ export function ProblemDescription({ title, description }: ProblemDescriptionPro
             />
           </svg>
         </div>
-        <h2 className="text-lg font-semibold text-[var(--text-primary)]">Problem</h2>
+        <h2 className="text-lg font-semibold text-[var(--text-primary)]">
+          Problem
+        </h2>
       </div>
 
       <div className="flex-1 p-5 overflow-y-auto">
-        <h3 className="text-xl font-bold text-[var(--text-primary)] mb-4">{title}</h3>
+        <h3 className="text-xl font-bold text-[var(--text-primary)] mb-4">
+          {title}
+        </h3>
         <div className="prose prose-sm max-w-none">
           <div
             className="text-[var(--text-secondary)] leading-relaxed whitespace-pre-wrap"
@@ -67,14 +74,20 @@ export function ProblemDescription({ title, description }: ProblemDescriptionPro
               }
               if (line.startsWith("**") && line.endsWith("**")) {
                 return (
-                  <h4 key={i} className="font-semibold text-[var(--text-primary)] mt-4 mb-2">
+                  <h4
+                    key={i}
+                    className="font-semibold text-[var(--text-primary)] mt-4 mb-2"
+                  >
                     {line.slice(2, -2)}
                   </h4>
                 );
               }
               if (line.startsWith("- ")) {
                 return (
-                  <li key={i} className="ml-4 mb-1 text-[var(--text-secondary)]">
+                  <li
+                    key={i}
+                    className="ml-4 mb-1 text-[var(--text-secondary)]"
+                  >
                     {line.slice(2)}
                   </li>
                 );
@@ -94,4 +107,3 @@ export function ProblemDescription({ title, description }: ProblemDescriptionPro
     </div>
   );
 }
-

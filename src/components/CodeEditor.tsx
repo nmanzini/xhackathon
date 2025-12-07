@@ -45,7 +45,8 @@ export function CodeEditor({
         ?.querySelector(".monaco-scrollable-element") as HTMLElement;
 
       if (scrollableElement) {
-        const needsScroll = scrollHeight > layoutInfo.height || scrollWidth > layoutInfo.width;
+        const needsScroll =
+          scrollHeight > layoutInfo.height || scrollWidth > layoutInfo.width;
         if (needsScroll) {
           scrollableElement.classList.remove("no-scroll");
         } else {
