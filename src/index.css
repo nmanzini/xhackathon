@@ -150,7 +150,7 @@ h1 {
 }
 
 .review-scroll-container::-webkit-scrollbar {
-  width: 20px;
+  width: 32px;
 }
 
 .review-scroll-container::-webkit-scrollbar-track {

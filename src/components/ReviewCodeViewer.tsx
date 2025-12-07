@@ -154,21 +154,23 @@ export function ReviewCodeViewer({
   }, [code, direction]);
 
   return (
-    <div className="h-full">
-      <Editor
-        height="100%"
-        defaultLanguage="typescript"
-        value={code}
-        theme={themeName}
-        onMount={handleEditorMount}
-        options={{
-          readOnly: true,
-          minimap: { enabled: false },
-          fontSize: 14,
-          lineNumbers: "on",
-          scrollBeyondLastLine: false,
-        }}
-      />
+    <div className="h-full p-6">
+      <div className="h-full rounded-xl overflow-hidden shadow-[var(--shadow-xl)] border border-[var(--border-color)]">
+        <Editor
+          height="100%"
+          defaultLanguage="typescript"
+          value={code}
+          theme={themeName}
+          onMount={handleEditorMount}
+          options={{
+            readOnly: true,
+            minimap: { enabled: false },
+            fontSize: 14,
+            lineNumbers: "on",
+            scrollBeyondLastLine: false,
+          }}
+        />
+      </div>
     </div>
   );
 }
