@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { useParams, Link } from "react-router-dom";
+import { useParams, Link, useNavigate } from "react-router-dom";
 import {
   LineChart,
   Line,
@@ -245,8 +245,39 @@ function formatRelativeTime(ms: number): string {
   return `${minutes}:${seconds.toString().padStart(2, "0")}`;
 }
 
+interface ClickableDotProps {
+  cx?: number;
+  cy?: number;
+  fill: string;
+  payload?: { timeMs?: number };
+  onClick: (timeMs: number) => void;
+}
+
+function ClickableDot({ cx, cy, fill, payload, onClick }: ClickableDotProps) {
+  if (cx === undefined || cy === undefined) {
+    return null;
+  }
+  return (
+    <circle
+      cx={cx}
+      cy={cy}
+      r={6}
+      fill={fill}
+      stroke={fill}
+      strokeWidth={2}
+      style={{ cursor: "pointer" }}
+      onClick={() => {
+        if (payload?.timeMs !== undefined) {
+          onClick(payload.timeMs);
+        }
+      }}
+    />
+  );
+}
+
 export function AnalysisPage() {
   const { id } = useParams<{ id: string }>();
+  const navigate = useNavigate();
   const [interviews] = useStore(interviewsStore);
   const [, setAnalysisResults] = useStore(analysisResultsStore);
   const [analysis, setAnalysis] = useState<InterviewAnalysis | null>(null);
@@ -323,6 +354,10 @@ export function AnalysisPage() {
         interview.transcript[h.transcriptIndex]?.timestamp || 0;
       return formatRelativeTime(entryTimestamp - firstTimestamp);
     }) || [];
+
+  const handleDotClick = (timeMs: number) => {
+    navigate(`/review/${id}?t=${timeMs}`);
+  };
 
   return (
     <div className="min-h-screen bg-[var(--bg-primary)] p-8">
@@ -412,7 +447,7 @@ export function AnalysisPage() {
               <h2 className="text-lg font-semibold text-[var(--text-primary)] mb-4">
                 Score Progression
               </h2>
-              <div className="h-80">
+              <div className="h-80" style={{ outline: "none" }}>
                 <ResponsiveContainer width="100%" height="100%">
                   <LineChart
                     data={chartData}
@@ -468,24 +503,28 @@ export function AnalysisPage() {
                       dataKey="Communication"
                       stroke="#5bb3d8"
                       strokeWidth={2}
-                      dot={{ fill: "#5bb3d8", strokeWidth: 2, r: 4 }}
-                      activeDot={{
-                        r: 6,
-                        stroke: "#5bb3d8",
-                        strokeWidth: 2,
-                      }}
+                      dot={(props) => (
+                        <ClickableDot
+                          {...props}
+                          fill="#5bb3d8"
+                          onClick={handleDotClick}
+                        />
+                      )}
+                      activeDot={false}
                     />
                     <Line
                       type="monotone"
                       dataKey="Thought Process"
                       stroke="#5f6be1"
                       strokeWidth={2}
-                      dot={{ fill: "#5f6be1", strokeWidth: 2, r: 4 }}
-                      activeDot={{
-                        r: 6,
-                        stroke: "#5f6be1",
-                        strokeWidth: 2,
-                      }}
+                      dot={(props) => (
+                        <ClickableDot
+                          {...props}
+                          fill="#5f6be1"
+                          onClick={handleDotClick}
+                        />
+                      )}
+                      activeDot={false}
                     />
                   </LineChart>
                 </ResponsiveContainer>

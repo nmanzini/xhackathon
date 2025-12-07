@@ -227,3 +227,12 @@ h1 {
     transform: scale(1);
   }
 }
+
+/* Remove focus outline from recharts */
+.recharts-wrapper svg:focus {
+  outline: none !important;
+}
+
+.recharts-wrapper *:focus {
+  outline: none !important;
+}

@@ -1,17 +1,19 @@
 import { useState, useRef, useEffect } from "react";
-import { useParams, Link } from "react-router-dom";
+import { useParams, Link, useSearchParams } from "react-router-dom";
 import { TranscriptView } from "../components/TranscriptView";
 import { ReviewCodeViewer } from "../components/ReviewCodeViewer";
 import { interviewsStore, useStore } from "../stores";
 
 export function ReviewPage() {
   const { id } = useParams<{ id: string }>();
+  const [searchParams] = useSearchParams();
   const [interviews] = useStore(interviewsStore);
   const [timelinePosition, setTimelinePosition] = useState(0);
   const [direction, setDirection] = useState<"forward" | "backward">("forward");
   const [showSettings, setShowSettings] = useState(false);
   const scrollContainerRef = useRef<HTMLDivElement>(null);
   const lastPositionRef = useRef<number>(0);
+  const initialScrollDoneRef = useRef<boolean>(false);
 
   const interview = interviews.find((i) => i.id === id);
   const totalSteps = interview?.transcript.length ?? 0;
@@ -43,6 +45,48 @@ export function ReviewPage() {
     container.addEventListener("scroll", handleScroll, { passive: true });
     return () => container.removeEventListener("scroll", handleScroll);
   }, [totalSteps, interview]);
+
+  useEffect(() => {
+    if (initialScrollDoneRef.current || !interview || totalSteps === 0) {
+      return;
+    }
+
+    const targetTimeMs = searchParams.get("t");
+    if (!targetTimeMs) {
+      return;
+    }
+
+    const targetTime = parseInt(targetTimeMs, 10);
+    if (isNaN(targetTime)) {
+      return;
+    }
+
+    const firstTimestamp = interview.transcript[0]?.timestamp || 0;
+
+    let closestIndex = 0;
+    let closestDiff = Infinity;
+
+    for (let i = 0; i < interview.transcript.length; i++) {
+      const entryRelativeTime =
+        interview.transcript[i].timestamp - firstTimestamp;
+      const diff = Math.abs(entryRelativeTime - targetTime);
+      if (diff < closestDiff) {
+        closestDiff = diff;
+        closestIndex = i;
+      }
+    }
+
+    initialScrollDoneRef.current = true;
+    setTimelinePosition(closestIndex);
+    lastPositionRef.current = closestIndex;
+
+    const container = scrollContainerRef.current;
+    if (container) {
+      const maxScroll = container.scrollHeight - container.clientHeight;
+      const scrollPercent = closestIndex / totalSteps;
+      container.scrollTop = scrollPercent * maxScroll;
+    }
+  }, [interview, totalSteps, searchParams]);
 
   if (!interview || interview.transcript.length === 0) {
     return (
