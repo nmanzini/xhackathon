@@ -11,9 +11,9 @@ import {
   ResponsiveContainer,
   ReferenceLine,
 } from "recharts";
-import { mockInterviews } from "../data/mockInterviews";
 import { analyzeInterview } from "../utils/analyzeInterview";
 import type { InterviewAnalysis, Score, SolutionOutcome } from "../types";
+import { interviewsStore, analysisResultsStore, useStore } from "../stores";
 
 const API_KEY = import.meta.env.VITE_XAI_API_KEY || "";
 
@@ -90,7 +90,6 @@ function getOutcomeLabel(outcome: SolutionOutcome): string {
 //       return "Did not finish the solution";
 //   }
 // }
-
 
 interface ScoreRowProps {
   title: string;
@@ -248,15 +247,24 @@ function formatRelativeTime(ms: number): string {
 
 export function AnalysisPage() {
   const { id } = useParams<{ id: string }>();
+  const [interviews] = useStore(interviewsStore);
+  const [, setAnalysisResults] = useStore(analysisResultsStore);
   const [analysis, setAnalysis] = useState<InterviewAnalysis | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [showSettings, setShowSettings] = useState(false);
 
-  const interview = mockInterviews.find((i) => i.id === id);
+  const interview = interviews.find((i) => i.id === id);
 
   useEffect(() => {
-    if (!interview) {
+    if (!interview || !id) {
+      setLoading(false);
+      return;
+    }
+
+    const cached = analysisResultsStore.get()[id];
+    if (cached) {
+      setAnalysis(cached);
       setLoading(false);
       return;
     }
@@ -267,6 +275,10 @@ export function AnalysisPage() {
         setError(null);
         const result = await analyzeInterview(interview!, API_KEY);
         setAnalysis(result);
+        setAnalysisResults({
+          ...analysisResultsStore.get(),
+          [id!]: result,
+        });
       } catch (err) {
         setError(err instanceof Error ? err.message : "Analysis failed");
       } finally {
@@ -275,7 +287,7 @@ export function AnalysisPage() {
     }
 
     runAnalysis();
-  }, [interview]);
+  }, [interview, id, setAnalysisResults]);
 
   if (!interview) {
     return (
