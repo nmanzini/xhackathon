@@ -101,7 +101,7 @@ export function ReviewPage() {
               : "No transcript data available"}
           </div>
           <Link
-            to="/interviews"
+            to="/"
             className="text-[var(--primary-color)] hover:underline"
           >
             Back to candidates
@@ -129,7 +129,7 @@ export function ReviewPage() {
           <div className="p-4 border-b border-[var(--border-color)] flex items-center justify-between">
             <div className="flex items-center gap-3">
               <Link
-                to="/interviews"
+                to="/"
                 className="text-[var(--primary-color)] hover:opacity-80 transition-opacity"
               >
                 ← Back

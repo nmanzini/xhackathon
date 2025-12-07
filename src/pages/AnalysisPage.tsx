@@ -331,7 +331,7 @@ export function AnalysisPage() {
             Interview not found
           </div>
           <Link
-            to="/interviews"
+            to="/"
             className="text-[var(--primary-color)] hover:underline"
           >
             Back to candidates
@@ -368,7 +368,7 @@ export function AnalysisPage() {
         <div className="flex items-center justify-between mb-8">
           <div className="flex items-center gap-4">
             <Link
-              to="/interviews"
+              to="/"
               className="text-[var(--primary-color)] hover:opacity-80 transition-opacity"
             >
               ← Back
