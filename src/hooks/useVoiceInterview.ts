@@ -307,9 +307,10 @@ export function useVoiceInterview({
         }, 500); // Increased delay to ensure audio finishes
       }
 
-      // User started speaking → stop AI playback
+      // User started speaking → stop AI playback and clear buffer
       if (type === "input_audio_buffer.speech_started") {
         stopPlayback();
+        assistantBuffer.current = ""; // Clear buffer to prevent stale transcript
       }
 
       // Tool call from AI - with enhanced logging
@@ -416,11 +417,11 @@ export function useVoiceInterview({
             break;
           }
           
-          // If we got garbage transcripts but no valid speech, still trigger AI response
-          // This handles the case where XAI API echoes back our injections as "user speech"
+          // If we got garbage transcripts but no valid speech, DON'T trigger AI response
+          // This prevents the AI from repeating herself when she didn't hear the user
           if (hadGarbageTranscript && !hadValidUserSpeech) {
-            console.log("[Interview] Only garbage transcripts received, triggering AI response anyway");
-            send({ type: "response.create" });
+            console.log("[Interview] Only garbage transcripts received, ignoring (user speech not captured)");
+            // Don't call response.create - wait for valid user speech
           }
         }
       }
@@ -432,7 +433,7 @@ export function useVoiceInterview({
         setError(err?.message || "An error occurred");
       }
     },
-    [configureSession, sendGreeting, playAudio, stopPlayback, updateAssistantMessage, addOrUpdateUserMessage, handleToolCall, send]
+    [configureSession, sendGreeting, playAudio, stopPlayback, updateAssistantMessage, addOrUpdateUserMessage, addCodeSent, handleToolCall, send]
   );
 
   // === START / STOP ===
