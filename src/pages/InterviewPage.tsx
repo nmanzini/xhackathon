@@ -112,16 +112,32 @@ export function InterviewPage() {
     error,
     startInterview,
     stopInterview,
+    sendTestResults,
   } = useVoiceInterview({
     interviewInput: DEFAULT_INTERVIEW,
     codeRef,
     language,
     onRunTests: runAll,
     onAddTest: addTest,
-    onEndInterview: (data) => {
-      console.log("[Interview] Ended with score:", data.score, "feedback:", data.feedback);
-    },
   });
+
+  // Wrapper to run tests and send results to AI
+  const runAllAndNotifyAI = useCallback(async () => {
+    const results = await runAll();
+    // Send results to AI so it can comment on them
+    sendTestResults(results, testCases);
+    return results;
+  }, [runAll, sendTestResults, testCases]);
+
+  // Wrapper for single test run - also notify AI
+  const runOneAndNotifyAI = useCallback(async (testId: string) => {
+    const result = await runOne(testId);
+    // After single test, send ALL results if we have any
+    if (results.length > 0) {
+      sendTestResults(results, testCases);
+    }
+    return result;
+  }, [runOne, results, sendTestResults, testCases]);
 
   // Extract problem title from the question (first line with **)
   const problemTitle =
@@ -227,7 +243,7 @@ export function InterviewPage() {
             <button
               onClick={(e) => {
                 e.stopPropagation();
-                runAll();
+                runAllAndNotifyAI();
               }}
               disabled={isRunning}
               className="px-3 py-1 text-sm bg-emerald-600 hover:bg-emerald-700 disabled:bg-zinc-600 text-white rounded transition-colors"
@@ -241,8 +257,8 @@ export function InterviewPage() {
                 testCases={testCases}
                 results={results}
                 isRunning={isRunning}
-                onRunAll={runAll}
-                onRunOne={runOne}
+                onRunAll={runAllAndNotifyAI}
+                onRunOne={runOneAndNotifyAI}
                 onAddTest={addTest}
                 onRemoveTest={removeTest}
                 initialTestCount={initialTestCount}
