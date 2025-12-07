@@ -90,8 +90,10 @@ export function useVoiceInterview({
   // Initialize with starter code so we don't send it until user actually edits
   const lastSentCode = useRef<string>(codeRef.current);
   
-  // Use refs for callbacks that change frequently (e.g., when language changes)
+  // Use refs for values/callbacks that change frequently (e.g., when language changes)
   // This avoids stale closure issues in handleMessage
+  const languageRef = useRef(language);
+  languageRef.current = language;
   const onRunTestsRef = useRef(onRunTests);
   onRunTestsRef.current = onRunTests;
   const getTestCasesRef = useRef(getTestCases);
@@ -181,7 +183,7 @@ export function useVoiceInterview({
             `Test ${idx + 1}: input=${JSON.stringify(tc.input)}, expected=${JSON.stringify(tc.expected)}`
           ).join("\n");
           
-          output = `Language: ${language}\n\nCode:\n${code || "(empty - no code written yet)"}\n\nExisting Test Cases:\n${testCasesList}`;
+          output = `Language: ${languageRef.current}\n\nCode:\n${code || "(empty - no code written yet)"}\n\nExisting Test Cases:\n${testCasesList}`;
         } 
         else if (toolName === "run_tests") {
           console.log("[Interview] AI running tests with current language setting...");
@@ -250,7 +252,7 @@ export function useVoiceInterview({
       console.log("[Interview] All tools processed, triggering AI response");
       send({ type: "response.create" });
     },
-    [codeRef, language, addCodeSent, addToolCall, addTestRun, onAddTest, send]
+    [codeRef, addCodeSent, addToolCall, addTestRun, onAddTest, send]
   );
 
   // Send initial greeting to start interview
@@ -391,7 +393,7 @@ export function useVoiceInterview({
               // Add visual indicator in transcript
               addCodeSent(currentCode);
               
-              // Send to AI
+              // Send to AI (use languageRef to get current language, not stale closure)
               send({
                 type: "conversation.item.create",
                 item: {
@@ -400,7 +402,7 @@ export function useVoiceInterview({
                   content: [
                     { 
                       type: "input_text", 
-                      text: `[Current Code]\n\`\`\`${language}\n${currentCode}\n\`\`\`` 
+                      text: `[Current Code]\n\`\`\`${languageRef.current}\n${currentCode}\n\`\`\`` 
                     }
                   ],
                 },
