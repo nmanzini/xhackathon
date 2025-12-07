@@ -330,10 +330,7 @@ export function AnalysisPage() {
           <div className="text-xl text-[var(--text-primary)] mb-4">
             Interview not found
           </div>
-          <Link
-            to="/"
-            className="text-[var(--primary-color)] hover:underline"
-          >
+          <Link to="/" className="text-[var(--primary-color)] hover:underline">
             Back to candidates
           </Link>
         </div>

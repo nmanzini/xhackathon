@@ -184,7 +184,7 @@ export function InterviewSetupPage() {
                     <div
                       key={question.id}
                       onClick={() => setSelectedQuestionId(question.id)}
-                      className={`w-full p-4 rounded-lg border-2 text-left transition-all cursor-pointer ${
+                      className={`w-full p-4 rounded-lg border-2 text-left transition-all cursor-pointer relative ${
                         selectedQuestionId === question.id
                           ? "border-[var(--primary-color)] bg-[var(--primary-color)]/10"
                           : "border-[var(--border-color)] hover:border-[var(--text-disabled)]"
@@ -210,10 +210,10 @@ export function InterviewSetupPage() {
                             e.stopPropagation();
                             handleDeleteQuestion(question.id);
                           }}
-                          className="p-1.5 rounded-lg text-[var(--text-disabled)] hover:text-red-500 hover:bg-red-500/10 transition-all"
+                          className="rounded-lg text-[var(--text-disabled)] hover:text-red-500 hover:bg-red-500/10 transition-all self-center"
                         >
                           <svg
-                            className="w-4 h-4"
+                            className="w-6 h-6"
                             fill="none"
                             stroke="currentColor"
                             viewBox="0 0 24 24"
