@@ -63,7 +63,7 @@ export function InterviewSetupPage() {
       customInstruction: customInstruction.trim(),
     });
 
-    navigate("/");
+    navigate("/interview");
   }
 
   function handleDeleteQuestion(questionId: string) {
