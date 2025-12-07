@@ -1,3 +1,4 @@
+import { useState } from "react";
 import type { TranscriptEntry } from "../hooks/useTranscript";
 
 interface InterviewPanelProps {
@@ -19,6 +20,20 @@ export function InterviewPanel({
   onStart,
   onStop,
 }: InterviewPanelProps) {
+  const [expandedCode, setExpandedCode] = useState<Set<number>>(new Set());
+
+  const toggleCodeExpand = (index: number) => {
+    setExpandedCode((prev) => {
+      const next = new Set(prev);
+      if (next.has(index)) {
+        next.delete(index);
+      } else {
+        next.add(index);
+      }
+      return next;
+    });
+  };
+
   return (
     <div className="h-full flex flex-col bg-zinc-900 text-white">
       {/* Header */}
@@ -89,31 +104,39 @@ export function InterviewPanel({
                     : "bg-zinc-800/50 border-l-2 border-blue-500"
                 }`}
               >
-                <div className="flex items-center gap-2 mb-1">
-                  <span
-                    className={`text-xs font-medium ${
-                      entry.role === "assistant"
-                        ? "text-emerald-400"
-                        : entry.role === "code"
-                        ? "text-violet-400"
-                        : "text-blue-400"
-                    }`}
-                  >
-                    {entry.role === "assistant"
-                      ? "Interviewer"
-                      : entry.role === "code"
-                      ? "📄 Code Sent"
-                      : "You"}
-                  </span>
-                  <span className="text-xs text-zinc-500">
-                    {new Date(entry.timestamp).toLocaleTimeString()}
-                  </span>
-                </div>
                 {entry.role === "code" ? (
-                  <pre className="text-xs text-zinc-400 font-mono overflow-auto max-h-40 whitespace-pre-wrap bg-zinc-900/50 p-2 rounded">
+                  // Collapsible code entry
+                  <button
+                    onClick={() => toggleCodeExpand(index)}
+                    className="w-full text-left flex items-center gap-2"
+                  >
+                    <span className="text-xs text-violet-400">
+                      {expandedCode.has(index) ? "▼" : "▶"} 📄 code context added
+                    </span>
+                    <span className="text-xs text-zinc-500">
+                      {new Date(entry.timestamp).toLocaleTimeString()}
+                    </span>
+                  </button>
+                ) : (
+                  <div className="flex items-center gap-2 mb-1">
+                    <span
+                      className={`text-xs font-medium ${
+                        entry.role === "assistant" ? "text-emerald-400" : "text-blue-400"
+                      }`}
+                    >
+                      {entry.role === "assistant" ? "Interviewer" : "You"}
+                    </span>
+                    <span className="text-xs text-zinc-500">
+                      {new Date(entry.timestamp).toLocaleTimeString()}
+                    </span>
+                  </div>
+                )}
+                {entry.role === "code" && expandedCode.has(index) && (
+                  <pre className="text-xs text-zinc-400 font-mono overflow-auto max-h-40 whitespace-pre-wrap bg-zinc-900/50 p-2 rounded mt-2">
                     {entry.content}
                   </pre>
-                ) : (
+                )}
+                {entry.role !== "code" && (
                   <p className="text-sm text-zinc-300">{entry.content}</p>
                 )}
               </div>
