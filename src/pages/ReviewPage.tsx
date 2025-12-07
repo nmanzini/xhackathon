@@ -70,6 +70,8 @@ export function ReviewPage() {
   const [timelinePosition, setTimelinePosition] = useState(0);
   const scrollContainerRef = useRef<HTMLDivElement>(null);
   const totalSteps = mockInterviewData.transcript.length;
+  const lastCodeRef = useRef<string>(mockInterviewData.transcript[0].code);
+  const lastPositionRef = useRef<number>(0);
 
   useEffect(() => {
     const container = scrollContainerRef.current;
@@ -96,6 +98,16 @@ export function ReviewPage() {
   );
   const currentCode = mockInterviewData.transcript[timelinePosition].code;
 
+  // Track what was actually displayed before (works for both forward and backward)
+  const previousCode = lastCodeRef.current !== currentCode ? lastCodeRef.current : undefined;
+  const direction = timelinePosition > lastPositionRef.current ? "forward" : "backward";
+
+  // Update the refs after render
+  useEffect(() => {
+    lastCodeRef.current = currentCode;
+    lastPositionRef.current = timelinePosition;
+  }, [currentCode, timelinePosition]);
+
   return (
     <div
       ref={scrollContainerRef}
@@ -111,7 +123,7 @@ export function ReviewPage() {
           <TranscriptView entries={visibleTranscript} />
         </div>
         <div className="w-1/2 h-full bg-[var(--code-bg)]">
-          <ReviewCodeViewer code={currentCode} />
+          <ReviewCodeViewer code={currentCode} previousCode={previousCode} direction={direction} />
         </div>
       </div>
 
