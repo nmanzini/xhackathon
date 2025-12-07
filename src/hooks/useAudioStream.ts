@@ -30,6 +30,7 @@ export function useAudioStream(): UseAudioStreamReturn {
   const playbackQueueRef = useRef<Float32Array[]>([]);
   const isPlayingRef = useRef(false);
   const currentPlaybackSourceRef = useRef<AudioBufferSourceNode | null>(null);
+  const onAudioDataRef = useRef<((base64Audio: string) => void) | null>(null);
 
   // Initialize audio context with native sample rate
   const getAudioContext = useCallback(() => {
@@ -51,7 +52,11 @@ export function useAudioStream(): UseAudioStreamReturn {
     }
 
     const chunk = playbackQueueRef.current.shift()!;
-    const audioBuffer = audioContext.createBuffer(1, chunk.length, audioContext.sampleRate);
+    const audioBuffer = audioContext.createBuffer(
+      1,
+      chunk.length,
+      audioContext.sampleRate
+    );
     audioBuffer.getChannelData(0).set(chunk);
 
     const source = audioContext.createBufferSource();
@@ -74,6 +79,7 @@ export function useAudioStream(): UseAudioStreamReturn {
   const startCapture = useCallback(
     async (onAudioData: (base64Audio: string) => void): Promise<number> => {
       try {
+        onAudioDataRef.current = onAudioData;
         const audioContext = getAudioContext();
         const nativeSampleRate = audioContext.sampleRate;
 
@@ -105,7 +111,8 @@ export function useAudioStream(): UseAudioStreamReturn {
 
         let audioBuffer: Float32Array[] = [];
         let totalSamples = 0;
-        const chunkSizeSamples = (audioContext.sampleRate * CHUNK_DURATION_MS) / 1000;
+        const chunkSizeSamples =
+          (audioContext.sampleRate * CHUNK_DURATION_MS) / 1000;
 
         processor.onaudioprocess = (event) => {
           const inputData = event.inputBuffer.getChannelData(0);
@@ -170,7 +177,7 @@ export function useAudioStream(): UseAudioStreamReturn {
   );
 
   // Stop audio capture
-  const stopCapture = useCallback(() => {
+  const stopCapture = useCallback((clearCallback = true) => {
     if (processorNodeRef.current) {
       processorNodeRef.current.disconnect();
       processorNodeRef.current = null;
@@ -184,6 +191,10 @@ export function useAudioStream(): UseAudioStreamReturn {
     if (mediaStreamRef.current) {
       mediaStreamRef.current.getTracks().forEach((track) => track.stop());
       mediaStreamRef.current = null;
+    }
+
+    if (clearCallback) {
+      onAudioDataRef.current = null;
     }
 
     setIsCapturing(false);
@@ -228,6 +239,26 @@ export function useAudioStream(): UseAudioStreamReturn {
     [getAudioContext, playNextChunk]
   );
 
+  // Listen for device changes and restart capture if needed
+  useEffect(() => {
+    const handleDeviceChange = async () => {
+      if (isCapturing && onAudioDataRef.current) {
+        console.log("[Audio] Device change detected, restarting capture...");
+        const callback = onAudioDataRef.current;
+        stopCapture(false);
+        await startCapture(callback);
+      }
+    };
+
+    navigator.mediaDevices.addEventListener("devicechange", handleDeviceChange);
+    return () => {
+      navigator.mediaDevices.removeEventListener(
+        "devicechange",
+        handleDeviceChange
+      );
+    };
+  }, [isCapturing, stopCapture, startCapture]);
+
   // Cleanup on unmount
   useEffect(() => {
     return () => {
@@ -248,4 +279,3 @@ export function useAudioStream(): UseAudioStreamReturn {
     sampleRate,
   };
 }
-
