@@ -59,3 +59,4 @@ export const rankedOrderStore = createStore<string[] | null>(
 export const scoreFilterStore = createStore<string>(SCORE_FILTER_KEY, "all");
 
 export const sortOrderStore = createStore<SortOrder>(SORT_ORDER_KEY, "date");
+
