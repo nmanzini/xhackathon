@@ -89,6 +89,13 @@ export function useVoiceInterview({
   const isProcessingTool = useRef(false);
   // Initialize with starter code so we don't send it until user actually edits
   const lastSentCode = useRef<string>(codeRef.current);
+  
+  // Use refs for callbacks that change frequently (e.g., when language changes)
+  // This avoids stale closure issues in handleMessage
+  const onRunTestsRef = useRef(onRunTests);
+  onRunTestsRef.current = onRunTests;
+  const getTestCasesRef = useRef(getTestCases);
+  getTestCasesRef.current = getTestCases;
 
   const { isCapturing, startCapture, stopCapture, stopPlayback, playAudio, audioLevel } =
     useAudioStream();
@@ -163,7 +170,7 @@ export function useVoiceInterview({
 
         if (toolName === "get_code") {
           const code = codeRef.current;
-          const testCases = getTestCases();
+          const testCases = getTestCasesRef.current();
           console.log("[Interview] Returning code:", code.substring(0, 100) + "...");
           
           // Add to UI transcript so user sees when AI checks code
@@ -177,16 +184,17 @@ export function useVoiceInterview({
           output = `Language: ${language}\n\nCode:\n${code || "(empty - no code written yet)"}\n\nExisting Test Cases:\n${testCasesList}`;
         } 
         else if (toolName === "run_tests") {
-          console.log("[Interview] AI running tests...");
+          console.log("[Interview] AI running tests with current language setting...");
           
           try {
-            const results = await onRunTests();
+            // Use ref to always get the latest onRunTests (with current language)
+            const results = await onRunTestsRef.current();
             const passCount = results.filter(r => r.passed).length;
             
             // Add test run to transcript with full details
             addTestRun(results);
             
-            const testCases = getTestCases();
+            const testCases = getTestCasesRef.current();
             const resultLines = results.map((r, idx) => {
               if (r.passed) return `Test ${idx + 1}: ✓ PASS`;
               if (r.error) return `Test ${idx + 1}: ✗ ERROR - ${r.error}`;
@@ -242,7 +250,7 @@ export function useVoiceInterview({
       console.log("[Interview] All tools processed, triggering AI response");
       send({ type: "response.create" });
     },
-    [codeRef, language, addCodeSent, addToolCall, onRunTests, onAddTest, interviewInput.testCases, send]
+    [codeRef, language, addCodeSent, addToolCall, addTestRun, onAddTest, send]
   );
 
   // Send initial greeting to start interview
@@ -323,6 +331,9 @@ export function useVoiceInterview({
         console.log("[Interview] conversation.item.added:", JSON.stringify(item, null, 2));
         
         if (item?.role === "user" && item?.content && item?.id) {
+          let hadValidUserSpeech = false;
+          let hadGarbageTranscript = false;
+          
           for (const content of item.content) {
             // Skip automatic code injections in transcript
             if (content.type === "input_text" && content.text?.startsWith("[Current Code]")) {
@@ -347,22 +358,25 @@ export function useVoiceInterview({
             }
             
             // Skip audio transcripts that contain code injection markers
-            // (API sometimes echoes our injections back as audio)
+            // (API sometimes echoes our injections back as audio - a known quirk)
             if (content.transcript.includes("[Current Code]") || 
                 content.transcript.includes("```python") ||
                 content.transcript.includes("```javascript") ||
                 content.transcript.includes("```typescript")) {
-              console.log("[Interview] Skipping audio with code injection feedback");
+              console.log("[Interview] Detected garbage transcript (code echo), will still trigger response");
+              hadGarbageTranscript = true;
               continue;
             }
             
             // Skip audio transcripts that contain test results echo
             if (content.transcript.includes("[Test Results]")) {
-              console.log("[Interview] Skipping audio with test results feedback");
+              console.log("[Interview] Detected garbage transcript (test results echo), will still trigger response");
+              hadGarbageTranscript = true;
               continue;
             }
             
             console.log("[Interview] User said:", content.transcript);
+            hadValidUserSpeech = true;
             
             // Add or update user message (same item ID = update existing entry)
             addOrUpdateUserMessage(item.id, content.transcript);
@@ -398,6 +412,13 @@ export function useVoiceInterview({
             // Trigger AI response (AI now has code context)
             send({ type: "response.create" });
             break;
+          }
+          
+          // If we got garbage transcripts but no valid speech, still trigger AI response
+          // This handles the case where XAI API echoes back our injections as "user speech"
+          if (hadGarbageTranscript && !hadValidUserSpeech) {
+            console.log("[Interview] Only garbage transcripts received, triggering AI response anyway");
+            send({ type: "response.create" });
           }
         }
       }
