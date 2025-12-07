@@ -85,6 +85,8 @@ export function useVoiceInterview({
   const assistantBuffer = useRef("");
   const pendingToolCalls = useRef<Array<{ callId: string; toolName: string; args: string }>>([]);
   const isProcessingTool = useRef(false);
+  // Initialize with starter code so we don't send it until user actually edits
+  const lastSentCode = useRef<string>(codeRef.current);
 
   const { isCapturing, startCapture, stopCapture, stopPlayback, playAudio, audioLevel } =
     useAudioStream();
@@ -310,6 +312,18 @@ export function useVoiceInterview({
         
         if (item?.role === "user" && item?.content && item?.id) {
           for (const content of item.content) {
+            // Skip automatic code injections in transcript
+            if (content.type === "input_text" && content.text?.startsWith("[Current Code]")) {
+              console.log("[Interview] Skipping code injection from transcript");
+              continue;
+            }
+            
+            // Skip audio transcripts that contain code injection (audio feedback loop)
+            if (content.type === "input_audio" && content.transcript?.includes("[Current Code]")) {
+              console.log("[Interview] Skipping audio with code injection feedback");
+              continue;
+            }
+            
             // Only process AUDIO transcripts
             if (content.type !== "input_audio") {
               console.log("[Interview] Skipping non-audio content:", content.type);
@@ -325,7 +339,35 @@ export function useVoiceInterview({
             // Add or update user message (same item ID = update existing entry)
             addOrUpdateUserMessage(item.id, content.transcript);
             
-            // Trigger AI response (AI will call tools if it wants)
+            // Inject current code as context ONLY if it has changed
+            // This ensures AI always has latest code without explicitly calling get_code
+            const currentCode = codeRef.current;
+            if (currentCode && currentCode.trim() !== "" && currentCode !== lastSentCode.current) {
+              console.log("[Interview] Code changed, injecting new code context");
+              lastSentCode.current = currentCode; // Update last sent code
+              
+              // Add visual indicator in transcript
+              addCodeSent(currentCode);
+              
+              // Send to AI
+              send({
+                type: "conversation.item.create",
+                item: {
+                  type: "message",
+                  role: "user",
+                  content: [
+                    { 
+                      type: "input_text", 
+                      text: `[Current Code]\n\`\`\`${language}\n${currentCode}\n\`\`\`` 
+                    }
+                  ],
+                },
+              });
+            } else if (currentCode === lastSentCode.current) {
+              console.log("[Interview] Code unchanged, skipping injection");
+            }
+            
+            // Trigger AI response (AI now has code context)
             send({ type: "response.create" });
             break;
           }
