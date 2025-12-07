@@ -1,4 +1,5 @@
 import { useEffect, useState, useRef } from "react";
+import { Bot, User } from "lucide-react";
 import type { TranscriptEntry } from "../types/index";
 
 interface TranscriptViewProps {
@@ -86,9 +87,11 @@ export function TranscriptView({ entry }: TranscriptViewProps) {
           ...styles,
         }}
       >
-        <div className="text-base font-mono text-[var(--text-secondary)] mb-3">
-          {messageEntry.role === "llm" ? "🤖 AI Interviewer" : "👤 Candidate"} •{" "}
-          {new Date(messageEntry.timestamp).toLocaleTimeString()}
+        <div className="text-base font-mono text-[var(--text-secondary)] mb-3 flex items-center gap-2">
+          {messageEntry.role === "llm" ? <Bot className="w-5 h-5" /> : <User className="w-5 h-5" />}
+          <span>{messageEntry.role === "llm" ? "AI Interviewer" : "Candidate"}</span>
+          <span>•</span>
+          <span>{new Date(messageEntry.timestamp).toLocaleTimeString()}</span>
         </div>
         <div className="text-xl leading-relaxed text-[var(--text-primary)]">
           {messageEntry.message}
