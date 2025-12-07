@@ -160,7 +160,7 @@ export type Message =
 // Transcript entry for UI
 export interface TranscriptEntry {
   timestamp: string;
-  role: "user" | "assistant";
+  role: "user" | "assistant" | "code";
   content: string;
 }
 

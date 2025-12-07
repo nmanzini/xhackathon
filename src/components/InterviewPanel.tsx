@@ -84,22 +84,38 @@ export function InterviewPanel({
                 className={`p-3 rounded-lg ${
                   entry.role === "assistant"
                     ? "bg-zinc-800 border-l-2 border-emerald-500"
+                    : entry.role === "code"
+                    ? "bg-violet-900/20 border-l-2 border-violet-500"
                     : "bg-zinc-800/50 border-l-2 border-blue-500"
                 }`}
               >
                 <div className="flex items-center gap-2 mb-1">
                   <span
                     className={`text-xs font-medium ${
-                      entry.role === "assistant" ? "text-emerald-400" : "text-blue-400"
+                      entry.role === "assistant"
+                        ? "text-emerald-400"
+                        : entry.role === "code"
+                        ? "text-violet-400"
+                        : "text-blue-400"
                     }`}
                   >
-                    {entry.role === "assistant" ? "Interviewer" : "You"}
+                    {entry.role === "assistant"
+                      ? "Interviewer"
+                      : entry.role === "code"
+                      ? "📄 Code Sent"
+                      : "You"}
                   </span>
                   <span className="text-xs text-zinc-500">
                     {new Date(entry.timestamp).toLocaleTimeString()}
                   </span>
                 </div>
-                <p className="text-sm text-zinc-300">{entry.content}</p>
+                {entry.role === "code" ? (
+                  <pre className="text-xs text-zinc-400 font-mono overflow-auto max-h-40 whitespace-pre-wrap bg-zinc-900/50 p-2 rounded">
+                    {entry.content}
+                  </pre>
+                ) : (
+                  <p className="text-sm text-zinc-300">{entry.content}</p>
+                )}
               </div>
             ))
           )}
