@@ -51,13 +51,27 @@ ${formatInterview(interviewB, "B")}
 
 ---
 
-EVALUATION CRITERIA:
-- Communication: How clearly did the candidate explain their thinking?
-- Problem Solving: Did they demonstrate logical problem-solving and consider edge cases?
-- Code Quality: Is the solution correct, efficient, and well-structured?
-- Independence: Did they solve the problem with minimal hints?
+EVALUATION CRITERIA (weighted by importance):
 
-Determine which candidate performed better overall. If they are essentially equal, you may declare a tie, but prefer to pick a winner when there is any meaningful difference.`;
+1. COMMUNICATION (30%): 
+   - Did the candidate clearly explain their thinking throughout?
+   - Did they articulate their approach before coding?
+   - Did they ask clarifying questions when needed?
+   - Did they verbalize their thought process while solving?
+
+2. THOUGHT PROCESS (35%):
+   - Did they break down the problem systematically?
+   - Did they consider edge cases and constraints?
+   - Did they demonstrate logical reasoning and problem-solving skills?
+   - Did they recognize and recover from mistakes?
+
+3. SOLUTION QUALITY (35%):
+   - Is the final solution correct?
+   - Is it efficient (good time/space complexity)?
+   - Is the code clean and well-structured?
+   - Does it handle edge cases properly?
+
+Compare both candidates across all three criteria, weighting them as indicated. Determine which candidate performed better overall. If they are essentially equal, you may declare a tie, but prefer to pick a winner when there is any meaningful difference.`;
 }
 
 export interface ComparisonResult {
