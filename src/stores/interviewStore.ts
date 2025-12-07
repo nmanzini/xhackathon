@@ -60,3 +60,9 @@ export const scoreFilterStore = createStore<string>(SCORE_FILTER_KEY, "all");
 
 export const sortOrderStore = createStore<SortOrder>(SORT_ORDER_KEY, "date");
 
+const LOADING_CANDIDATES_KEY = "loadingCandidates";
+
+export const loadingCandidatesStore = createStore<string[]>(
+  LOADING_CANDIDATES_KEY,
+  []
+);

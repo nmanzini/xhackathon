@@ -10,6 +10,7 @@ import {
   rankedOrderStore,
   scoreFilterStore,
   sortOrderStore,
+  loadingCandidatesStore,
   useStore,
 } from "../stores";
 import type { SortOrder } from "../stores";
@@ -79,6 +80,7 @@ export function InterviewListPage() {
   const [rankedOrder, setRankedOrder] = useStore(rankedOrderStore);
   const [scoreFilter, setScoreFilter] = useStore(scoreFilterStore);
   const [sortOrder, setSortOrder] = useStore(sortOrderStore);
+  const [loadingCandidates] = useStore(loadingCandidatesStore);
   const [search, setSearch] = useState("");
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const [loadingIds, setLoadingIds] = useState<Set<string>>(new Set());
@@ -430,12 +432,16 @@ export function InterviewListPage() {
                   : `${totalSeconds}s`;
 
               const analysis = analysisResults[interview.id];
-              const isLoading = loadingIds.has(interview.id);
+              const isLoading =
+                loadingIds.has(interview.id) ||
+                loadingCandidates.includes(interview.id);
 
               return (
                 <div
                   key={interview.id}
-                  onClick={() => navigate(`/analysis/${interview.id}`)}
+                  onClick={() =>
+                    navigate(`/interviews/${interview.id}/analysis`)
+                  }
                   className="block p-5 rounded-lg border border-[var(--border-color)] bg-[var(--card-bg)] shadow-[var(--shadow-md)] transition-all duration-200 cursor-pointer hover:bg-[var(--card-bg-hover)]"
                 >
                   <div className="flex justify-between items-start">
@@ -485,7 +491,7 @@ export function InterviewListPage() {
                         {formattedTime}
                       </div>
                       <Link
-                        to={`/review/${interview.id}`}
+                        to={`/interviews/${interview.id}`}
                         onClick={(e) => e.stopPropagation()}
                         className="px-3 py-2 rounded-lg text-[var(--text-secondary)] hover:text-[var(--primary-color)] hover:bg-[var(--card-bg-hover)] transition-all duration-200"
                       >
