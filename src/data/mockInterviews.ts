@@ -613,6 +613,9 @@ function reverseList(head) {
     this.cache.set(key, value);
   }
 }`,
+      functionName: "solution",
+      starterCode: defaultStarterCode,
+      testCases: [],
     },
     compiledSystemPrompt: "You are an AI interviewer...",
     transcript: [
@@ -676,6 +679,9 @@ function reverseList(head) {
   while (j < arr2.length) result.push(arr2[j++]);
   return result;
 }`,
+      functionName: "solution",
+      starterCode: defaultStarterCode,
+      testCases: [],
     },
     compiledSystemPrompt: "You are an AI interviewer...",
     transcript: [
@@ -807,6 +813,9 @@ function reverseList(head) {
   }
   return stack.length === 0;
 }`,
+      functionName: "solution",
+      starterCode: defaultStarterCode,
+      testCases: [],
     },
     compiledSystemPrompt: "You are an AI interviewer...",
     transcript: [
@@ -932,6 +941,9 @@ function reverseList(head) {
   }
   return null;
 }`,
+      functionName: "solution",
+      starterCode: defaultStarterCode,
+      testCases: [],
     },
     compiledSystemPrompt: "You are an AI interviewer...",
     transcript: [
@@ -1054,6 +1066,9 @@ function reverseList(head) {
   }
   return cloned;
 }`,
+      functionName: "solution",
+      starterCode: defaultStarterCode,
+      testCases: [],
     },
     compiledSystemPrompt: "You are an AI interviewer...",
     transcript: [
@@ -1174,6 +1189,9 @@ function reverseList(head) {
     }
   };
 }`,
+      functionName: "solution",
+      starterCode: defaultStarterCode,
+      testCases: [],
     },
     compiledSystemPrompt: "You are an AI interviewer...",
     transcript: [

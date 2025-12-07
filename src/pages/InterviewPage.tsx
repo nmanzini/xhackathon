@@ -43,15 +43,22 @@ export function InterviewPage() {
   const codeRef = useRef(code);
   codeRef.current = code;
 
-  // Resize logic
+  // Resize logic - optimized to avoid recreation on every state change
   const handleResize = useCallback(
     (setter: (v: number) => void, min: number, max: number, direction: "horizontal" | "vertical", invert: boolean) =>
       (e: React.MouseEvent) => {
         e.preventDefault();
         const startPos = direction === "horizontal" ? e.clientX : e.clientY;
-        const startSize = direction === "horizontal" 
-          ? (setter === setLeftWidth ? leftWidth : rightWidth)
-          : testHeight;
+        
+        // Get the current size from the DOM to avoid closure over state
+        const getStartSize = () => {
+          if (direction === "horizontal") {
+            if (setter === setLeftWidth) return leftWidth;
+            if (setter === setRightWidth) return rightWidth;
+          }
+          return testHeight;
+        };
+        const startSize = getStartSize();
 
         const handleMouseMove = (moveEvent: MouseEvent) => {
           const currentPos = direction === "horizontal" ? moveEvent.clientX : moveEvent.clientY;
@@ -190,7 +197,7 @@ export function InterviewPage() {
         {!testCollapsed && (
           <ResizeHandle 
             direction="vertical" 
-            onMouseDown={handleResize(setTestHeight, 100, 400, "vertical", true)} 
+            onMouseDown={handleResize(setTestHeight, 100, 800, "vertical", true)} 
           />
         )}
         
