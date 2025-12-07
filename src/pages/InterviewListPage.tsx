@@ -143,6 +143,7 @@ export function InterviewListPage() {
       `[Ranking] API Key present: ${!!API_KEY}, length: ${API_KEY.length}`
     );
     console.log(`[Ranking] Total interviews to rank: ${interviews.length}`);
+    setRankedOrder(null);
     setIsRanking(true);
     try {
       const sorted = await asyncMergeSort(
@@ -481,11 +482,18 @@ export function InterviewListPage() {
                       </div>
                     </div>
                     <div className="flex items-center gap-3">
-                      {rankedOrder && (
-                        <div className="w-8 h-8 rounded-lg flex items-center justify-center text-sm font-bold border-2 border-[var(--primary-color)] text-[var(--primary-color)] bg-[var(--primary-color)]/10">
-                          #{rankedOrder.indexOf(interview.id) + 1}
-                        </div>
-                      )}
+                      <div className="w-8 flex justify-center">
+                        {isRanking ? (
+                          <div className="w-6 h-6 border-2 border-[var(--border-color)] border-t-[var(--primary-color)] rounded-full animate-spin" />
+                        ) : (
+                          rankedOrder &&
+                          rankedOrder.indexOf(interview.id) >= 0 && (
+                            <div className="w-8 h-8 rounded-lg flex items-center justify-center text-sm font-bold border-2 border-[var(--primary-color)] text-[var(--primary-color)] bg-[var(--primary-color)]/10">
+                              #{rankedOrder.indexOf(interview.id) + 1}
+                            </div>
+                          )
+                        )}
+                      </div>
                       <div className="w-12 flex justify-center">
                         {isLoading && (
                           <div className="w-6 h-6 border-2 border-[var(--border-color)] border-t-[var(--primary-color)] rounded-full animate-spin" />
