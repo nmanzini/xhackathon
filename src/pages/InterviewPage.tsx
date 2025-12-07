@@ -88,6 +88,8 @@ export function InterviewPage() {
     runAll,
     runOne,
     addTest,
+    removeTest,
+    initialTestCount,
   } = useTestRunner(
     codeRef,
     language,
@@ -235,6 +237,8 @@ export function InterviewPage() {
                 onRunAll={runAll}
                 onRunOne={runOne}
                 onAddTest={addTest}
+                onRemoveTest={removeTest}
+                initialTestCount={initialTestCount}
                 hideHeader
               />
             </div>

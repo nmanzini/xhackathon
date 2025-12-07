@@ -13,6 +13,8 @@ interface TestPanelProps {
   onRunAll: () => void;
   onRunOne: (testId: string) => void;
   onAddTest: (input: any[], expected: any) => void;
+  onRemoveTest?: (testId: string) => void;
+  initialTestCount?: number;
   hideHeader?: boolean;
 }
 
@@ -23,6 +25,8 @@ export function TestPanel({
   onRunAll,
   onRunOne,
   onAddTest,
+  onRemoveTest,
+  initialTestCount = 0,
   hideHeader = false,
 }: TestPanelProps) {
   const [isExpanded, setIsExpanded] = useState(true);
@@ -111,6 +115,9 @@ export function TestPanel({
               : result.passed
               ? "text-emerald-500"
               : "text-red-500";
+            
+            // Can only delete tests added after the initial ones
+            const canDelete = onRemoveTest && idx >= initialTestCount;
 
             return (
               <div
@@ -141,13 +148,26 @@ export function TestPanel({
                   )}
                 </div>
                 
-                <button
-                  onClick={() => onRunOne(test.id)}
-                  disabled={isRunning}
-                  className="opacity-0 group-hover:opacity-100 px-2 py-1 text-xs bg-zinc-600 hover:bg-zinc-500 disabled:bg-zinc-700 text-white rounded transition-all"
-                >
-                  Run
-                </button>
+                <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                  <button
+                    onClick={() => onRunOne(test.id)}
+                    disabled={isRunning}
+                    className="px-2 py-1 text-xs bg-zinc-600 hover:bg-zinc-500 disabled:bg-zinc-700 text-white rounded transition-colors"
+                  >
+                    Run
+                  </button>
+                  
+                  {canDelete && (
+                    <button
+                      onClick={() => onRemoveTest(test.id)}
+                      disabled={isRunning}
+                      className="px-2 py-1 text-xs bg-red-600 hover:bg-red-700 disabled:bg-zinc-700 text-white rounded transition-colors"
+                      title="Delete this test case"
+                    >
+                      ✕
+                    </button>
+                  )}
+                </div>
               </div>
             );
           })}

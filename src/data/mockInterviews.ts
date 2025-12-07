@@ -395,6 +395,9 @@ function reverseList(head) {
   }
   return true;
 }`,
+      functionName: "solution",
+      starterCode: defaultStarterCode,
+      testCases: [],
     },
     compiledSystemPrompt: "You are an AI interviewer...",
     transcript: [
@@ -533,6 +536,9 @@ function reverseList(head) {
   }
   return maxSoFar;
 }`,
+      functionName: "solution",
+      starterCode: defaultStarterCode,
+      testCases: [],
     },
     compiledSystemPrompt: "You are an AI interviewer...",
     transcript: [
