@@ -166,6 +166,7 @@ export function InterviewPage() {
 
   const {
     isConnected,
+    hasDisconnected,
     isCapturing,
     audioLevel,
     transcript,
@@ -420,12 +421,14 @@ export function InterviewPage() {
           <div className="flex-1 overflow-hidden">
             <InterviewPanel
               isConnected={isConnected}
+              hasDisconnected={hasDisconnected}
               isCapturing={isCapturing}
               audioLevel={audioLevel}
               transcript={transcript}
               error={error}
               onStart={startInterview}
               onStop={handleEndInterview}
+              onReconnect={startInterview}
               hideHeader
             />
           </div>

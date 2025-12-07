@@ -1,26 +1,30 @@
 import { useEffect, useRef, useState } from "react";
-import { Bot, User, FileCode, Wrench, FlaskConical, Check, X, Mic, StopCircle, ChevronDown } from "lucide-react";
+import { Bot, User, FileCode, Wrench, FlaskConical, Check, X, Mic, StopCircle, ChevronDown, RefreshCw } from "lucide-react";
 import type { TranscriptEntry } from "../hooks/useTranscript";
 
 interface InterviewPanelProps {
   isConnected: boolean;
+  hasDisconnected: boolean;
   isCapturing: boolean;
   audioLevel: number;
   transcript: TranscriptEntry[];
   error: string | null;
   onStart: () => void;
   onStop: () => void;
+  onReconnect: () => void;
   hideHeader?: boolean;
 }
 
 export function InterviewPanel({
   isConnected,
+  hasDisconnected,
   isCapturing,
   audioLevel,
   transcript,
   error,
   onStart,
   onStop,
+  onReconnect,
   hideHeader = false,
 }: InterviewPanelProps) {
   const transcriptEndRef = useRef<HTMLDivElement>(null);
@@ -265,7 +269,29 @@ export function InterviewPanel({
 
       {/* Controls */}
       <div className="p-4 border-t border-[var(--border-color)]">
-        {!isConnected ? (
+        {isConnected ? (
+          <button
+            onClick={onStop}
+            className="w-full py-3 px-4 rounded-lg font-medium transition-all duration-200 flex items-center justify-center gap-2 text-white shadow-[var(--shadow-md)] hover:shadow-[var(--shadow-lg)]"
+            style={{ backgroundColor: "var(--alert-color)" }}
+          >
+            <StopCircle className="w-5 h-5" />
+            End Interview
+          </button>
+        ) : hasDisconnected ? (
+          <button
+            onClick={onReconnect}
+            className="w-full py-3 px-4 rounded-lg font-medium transition-all duration-200 flex items-center justify-center gap-2 shadow-[var(--shadow-sm)] hover:shadow-[var(--shadow-md)] border"
+            style={{
+              backgroundColor: "var(--slider-bg-start)",
+              borderColor: "var(--slider-border)",
+              color: "var(--warning-color)",
+            }}
+          >
+            <RefreshCw className="w-5 h-5" />
+            Reconnect
+          </button>
+        ) : (
           <button
             onClick={onStart}
             className="w-full py-3 px-4 rounded-lg font-medium transition-all duration-200 flex items-center justify-center gap-2 shadow-[var(--shadow-sm)] hover:shadow-[var(--shadow-md)] border"
@@ -277,15 +303,6 @@ export function InterviewPanel({
           >
             <Mic className="w-5 h-5" />
             Start Interview
-          </button>
-        ) : (
-          <button
-            onClick={onStop}
-            className="w-full py-3 px-4 rounded-lg font-medium transition-all duration-200 flex items-center justify-center gap-2 text-white shadow-[var(--shadow-md)] hover:shadow-[var(--shadow-lg)]"
-            style={{ backgroundColor: "var(--alert-color)" }}
-          >
-            <StopCircle className="w-5 h-5" />
-            End Interview
           </button>
         )}
       </div>
