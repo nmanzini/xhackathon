@@ -1,74 +1,63 @@
 /**
- * Main voice interview orchestration hook
+ * Voice Interview Hook
  * Connects to XAI realtime API and manages the interview flow
  * 
- * SIMPLIFIED VERSION:
- * - No "..." placeholders - just show actual text when available
- * - Only inject code once per user turn (not on every pause)
- * - Simple append-only transcript
+ * FLOW:
+ * 1. User speaks → Server VAD detects end → committed
+ * 2. Server transcribes → conversation.item.added (user transcript)
+ * 3. We inject code as user message
+ * 4. We call response.create → AI responds
  */
 
 import { useCallback, useRef, useState } from "react";
 import { useAudioStream } from "./useAudioStream";
+import { useTranscript } from "./useTranscript";
 import { buildSystemPrompt, buildCodeContextMessage } from "../utils/prompt";
 import type { InterviewInput } from "../types";
-import type { Message, TranscriptEntry } from "../types/messages";
+import type { Message } from "../types/messages";
 
-// XAI API configuration
 const XAI_REALTIME_URL = "wss://api.x.ai/v1/realtime";
 const XAI_API_KEY = import.meta.env.VITE_XAI_API_KEY || "";
-const VOICE = "ash"; // Available: ash, ballad, coral, sage, verse
-
-interface UseVoiceInterviewReturn {
-  isConnected: boolean;
-  isCapturing: boolean;
-  audioLevel: number;
-  transcript: TranscriptEntry[];
-  error: string | null;
-  startInterview: () => Promise<void>;
-  stopInterview: () => void;
-}
+const VOICE = "ash";
 
 export function useVoiceInterview(
   interviewInput: InterviewInput,
   codeRef: React.MutableRefObject<string>
-): UseVoiceInterviewReturn {
+) {
   const [isConnected, setIsConnected] = useState(false);
-  const [transcript, setTranscript] = useState<TranscriptEntry[]>([]);
   const [error, setError] = useState<string | null>(null);
 
   const wsRef = useRef<WebSocket | null>(null);
   const isSessionConfigured = useRef(false);
-  
-  // Track if we've injected code since last assistant response
-  const hasInjectedCodeThisTurn = useRef(false);
-  
-  // Track current assistant response being streamed
   const assistantBuffer = useRef("");
 
   const { isCapturing, startCapture, stopCapture, stopPlayback, playAudio, audioLevel } =
     useAudioStream();
 
-  // Send a message through the WebSocket
-  const sendMessage = useCallback((message: Message) => {
-    if (wsRef.current && wsRef.current.readyState === WebSocket.OPEN) {
-      if (message.type === "input_audio_buffer.append" && !isSessionConfigured.current) {
-        return;
-      }
-      wsRef.current.send(JSON.stringify(message));
+  const {
+    transcript,
+    addUserMessage,
+    updateAssistantMessage,
+    addCodeSent,
+    clear: clearTranscript,
+  } = useTranscript();
+
+  // === HELPERS ===
+
+  const send = useCallback((data: object) => {
+    if (wsRef.current?.readyState === WebSocket.OPEN) {
+      wsRef.current.send(JSON.stringify(data));
     }
   }, []);
 
-  // Configure the session after connection
+  // Configure session with system prompt and VAD
   const configureSession = useCallback(
-    (ws: WebSocket, sampleRate: number) => {
-      const systemPrompt = buildSystemPrompt(interviewInput);
+    (sampleRate: number) => {
       console.log("[Interview] Configuring session...");
-
-      const sessionConfig = {
+      send({
         type: "session.update",
         session: {
-          instructions: systemPrompt,
+          instructions: buildSystemPrompt(interviewInput),
           voice: VOICE,
           audio: {
             input: { format: { type: "audio/pcm", rate: sampleRate } },
@@ -76,156 +65,135 @@ export function useVoiceInterview(
           },
           turn_detection: { type: "server_vad" },
         },
-      };
-
-      ws.send(JSON.stringify(sessionConfig));
+      });
     },
-    [interviewInput]
+    [interviewInput, send]
   );
 
-  // Send initial greeting
-  const sendInitialGreeting = useCallback((ws: WebSocket) => {
-    console.log("[Interview] Sending initial greeting...");
-    ws.send(JSON.stringify({ type: "input_audio_buffer.commit" }));
-
-    const greetingMessage = {
+  // Send initial greeting to start interview
+  const sendGreeting = useCallback(() => {
+    console.log("[Interview] Sending greeting...");
+    send({ type: "input_audio_buffer.commit" });
+    send({
       type: "conversation.item.create",
       item: {
         type: "message",
         role: "user",
-        content: [{
-          type: "input_text",
-          text: "Please introduce yourself briefly and present the coding problem to the candidate.",
-        }],
+        content: [{ type: "input_text", text: "Please introduce yourself briefly and present the coding problem." }],
       },
-    };
-    ws.send(JSON.stringify(greetingMessage));
-    ws.send(JSON.stringify({ type: "response.create" }));
-  }, []);
+    });
+    send({ type: "response.create" });
+  }, [send]);
 
-  // Inject code context (only once per turn)
-  const injectCodeContext = useCallback(
-    (ws: WebSocket) => {
-      if (hasInjectedCodeThisTurn.current) {
-        console.log("[Interview] Code already injected this turn, skipping...");
-        return;
-      }
-      
-      hasInjectedCodeThisTurn.current = true;
-      const currentCode = codeRef.current;
-      const codeText = `[Here is my current code]\n${buildCodeContextMessage(currentCode)}`;
-      
-      // LOG THE FULL CODE being sent
-      console.log("[Interview] === CODE BEING SENT TO AI ===");
-      console.log(codeText);
-      console.log("[Interview] === END CODE ===");
-      
-      // Add to transcript
-      setTranscript((prev) => [
-        ...prev,
-        { timestamp: new Date().toISOString(), role: "code", content: currentCode },
-      ]);
-      
-      // Send to API
-      const codeMessage = {
-        type: "conversation.item.create",
-        item: {
-          type: "message",
-          role: "user",
-          content: [{
-            type: "input_text",
-            text: codeText,
-          }],
-        },
-      };
-      ws.send(JSON.stringify(codeMessage));
-    },
-    [codeRef]
-  );
+  // Inject code and trigger AI response
+  const injectCodeAndRespond = useCallback(() => {
+    const code = codeRef.current;
+    const codeText = `[Here is my current code]\n${buildCodeContextMessage(code)}`;
 
-  // Handle incoming WebSocket messages
+    console.log("[Interview] Injecting code and requesting response...");
+    console.log("[Interview] Code:", code.substring(0, 100) + "...");
+
+    // Add to UI transcript
+    addCodeSent(code);
+
+    // Send code to API
+    send({
+      type: "conversation.item.create",
+      item: {
+        type: "message",
+        role: "user",
+        content: [{ type: "input_text", text: codeText }],
+      },
+    });
+
+    // NOW trigger AI response
+    send({ type: "response.create" });
+  }, [codeRef, send, addCodeSent]);
+
+  // === MESSAGE HANDLER ===
+
   const handleMessage = useCallback(
-    (message: Message, ws: WebSocket, sampleRate: number) => {
-      
-      // === Session setup ===
-      if (message.type === "conversation.created" && !isSessionConfigured.current) {
-        configureSession(ws, sampleRate);
-      }
+    (message: Message, sampleRate: number) => {
+      const { type } = message;
 
-      if (message.type === "session.updated" && !isSessionConfigured.current) {
+      // Session setup
+      if (type === "conversation.created" && !isSessionConfigured.current) {
+        configureSession(sampleRate);
+      }
+      if (type === "session.updated" && !isSessionConfigured.current) {
         isSessionConfigured.current = true;
-        sendInitialGreeting(ws);
+        sendGreeting();
       }
 
-      // === Audio playback ===
-      if (message.type === "response.output_audio.delta" && "delta" in message) {
+      // AI audio → play it
+      if (type === "response.output_audio.delta" && "delta" in message) {
         playAudio(message.delta as string);
       }
 
-      // === Assistant transcript (streaming) ===
-      if (message.type === "response.output_audio_transcript.delta" && "delta" in message) {
-        const delta = message.delta as string;
-        assistantBuffer.current += delta;
-        
-        // Update or create assistant entry
-        setTranscript((prev) => {
-          const lastIdx = prev.length - 1;
-          if (lastIdx >= 0 && prev[lastIdx].role === "assistant") {
-            // Update existing
-            const updated = [...prev];
-            updated[lastIdx] = { ...updated[lastIdx], content: assistantBuffer.current };
-            return updated;
-          }
-          // Create new
-          return [...prev, { timestamp: new Date().toISOString(), role: "assistant", content: assistantBuffer.current }];
-        });
+      // AI transcript (streaming)
+      if (type === "response.output_audio_transcript.delta" && "delta" in message) {
+        assistantBuffer.current += message.delta as string;
+        updateAssistantMessage(assistantBuffer.current);
       }
 
-      // === Assistant done - reset for next turn ===
-      if (message.type === "response.done") {
+      // AI done speaking
+      if (type === "response.done") {
         assistantBuffer.current = "";
-        hasInjectedCodeThisTurn.current = false; // Reset for next user turn
       }
 
-      // === User started speaking ===
-      if (message.type === "input_audio_buffer.speech_started") {
+      // User started speaking → stop AI playback
+      if (type === "input_audio_buffer.speech_started") {
         stopPlayback();
       }
 
-      // === User finished speaking - inject code ===
-      if (message.type === "input_audio_buffer.committed") {
-        console.log("[Interview] User finished speaking...");
-        injectCodeContext(ws);
-      }
-
-      // === User transcript (final) ===
-      if (message.type === "conversation.item.added" && "item" in message) {
-        const item = message.item as { role?: string; content?: Array<{ type: string; transcript?: string }> };
+      // User transcript received → THIS IS THE KEY MOMENT
+      // Now we have the full user message, so we inject code and trigger response
+      if (type === "conversation.item.added" && "item" in message) {
+        const item = message.item as { role?: string; content?: Array<{ type: string; transcript?: string; text?: string }> };
+        
+        // Debug: log what we received
+        console.log("[Interview] conversation.item.added:", JSON.stringify(item, null, 2));
+        
         if (item?.role === "user" && item?.content) {
           for (const content of item.content) {
-            if (content.type === "input_audio" && content.transcript) {
-              const userText = content.transcript; // Extract to avoid closure issues
-              setTranscript((prev) => [
-                ...prev,
-                { timestamp: new Date().toISOString(), role: "user", content: userText },
-              ]);
-              break;
+            // Only process AUDIO transcripts, not our injected text messages
+            if (content.type !== "input_audio") {
+              console.log("[Interview] Skipping non-audio content:", content.type);
+              continue;
             }
+            if (!content.transcript) {
+              console.log("[Interview] Skipping: no transcript");
+              continue;
+            }
+            if (content.transcript.includes("[Here is my current code]")) {
+              console.log("[Interview] Skipping: contains code marker");
+              continue;
+            }
+            
+            console.log("[Interview] User said:", content.transcript);
+            
+            // Add user message to transcript
+            addUserMessage(content.transcript);
+            
+            // NOW inject code and ask AI to respond
+            injectCodeAndRespond();
+            break;
           }
         }
       }
 
-      // === Errors ===
-      if (message.type === "error") {
-        const errorMsg = message.error as { message?: string } | undefined;
-        console.error("[Interview] Error:", errorMsg?.message);
-        setError(errorMsg?.message || "An error occurred");
+      // Errors
+      if (type === "error") {
+        const err = (message as { error?: { message?: string } }).error;
+        console.error("[Interview] Error:", err?.message);
+        setError(err?.message || "An error occurred");
       }
     },
-    [configureSession, sendInitialGreeting, playAudio, stopPlayback, injectCodeContext]
+    [configureSession, sendGreeting, playAudio, stopPlayback, updateAssistantMessage, addUserMessage, injectCodeAndRespond]
   );
 
-  // Start interview
+  // === START / STOP ===
+
   const startInterview = useCallback(async () => {
     if (!XAI_API_KEY) {
       setError("XAI_API_KEY not configured. Add VITE_XAI_API_KEY to your .env file.");
@@ -234,18 +202,17 @@ export function useVoiceInterview(
 
     try {
       setError(null);
-      setTranscript([]);
+      clearTranscript();
       isSessionConfigured.current = false;
-      hasInjectedCodeThisTurn.current = false;
       assistantBuffer.current = "";
 
       console.log("[Interview] Starting...");
 
-      const sampleRate = await startCapture((base64Audio) => {
-        sendMessage({ type: "input_audio_buffer.append", audio: base64Audio });
+      const sampleRate = await startCapture((audio) => {
+        if (isSessionConfigured.current) {
+          send({ type: "input_audio_buffer.append", audio });
+        }
       });
-
-      console.log(`[Interview] Sample rate: ${sampleRate}Hz`);
 
       const ws = new WebSocket(XAI_REALTIME_URL, [
         "realtime",
@@ -260,35 +227,30 @@ export function useVoiceInterview(
 
       ws.onmessage = (event) => {
         try {
-          const message: Message = JSON.parse(event.data);
-          if (!["input_audio_buffer.append", "response.output_audio.delta", "ping"].includes(message.type)) {
-            console.log("[Interview]", message.type);
+          const msg: Message = JSON.parse(event.data);
+          if (!["input_audio_buffer.append", "response.output_audio.delta", "ping"].includes(msg.type)) {
+            console.log("[Interview]", msg.type);
           }
-          handleMessage(message, ws, sampleRate);
-        } catch (err) {
-          console.error("[Interview] Parse error:", err);
+          handleMessage(msg, sampleRate);
+        } catch (e) {
+          console.error("[Interview] Parse error:", e);
         }
       };
 
-      ws.onerror = () => setError("Connection error. Check your API key.");
-      
-      ws.onclose = (event) => {
-        console.log(`[Interview] Closed: ${event.code}`);
+      ws.onerror = () => setError("Connection error");
+      ws.onclose = (e) => {
+        console.log("[Interview] Closed:", e.code);
         setIsConnected(false);
-        isSessionConfigured.current = false;
-        if (event.code !== 1000) {
-          setError(`Connection closed: ${event.reason || event.code}`);
-        }
+        if (e.code !== 1000) setError(`Closed: ${e.reason || e.code}`);
       };
 
       wsRef.current = ws;
-    } catch (err) {
-      console.error("[Interview] Failed:", err);
-      setError(err instanceof Error ? err.message : "Failed to start");
+    } catch (e) {
+      console.error("[Interview] Failed:", e);
+      setError(e instanceof Error ? e.message : "Failed to start");
     }
-  }, [startCapture, sendMessage, handleMessage]);
+  }, [startCapture, send, handleMessage, clearTranscript]);
 
-  // Stop interview
   const stopInterview = useCallback(() => {
     console.log("[Interview] Stopping...");
     stopCapture();
