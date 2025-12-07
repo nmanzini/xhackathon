@@ -13,7 +13,10 @@ function App() {
         <Route path="/" element={<InterviewListPage />} />
         <Route path="/interview" element={<InterviewPage />} />
         <Route path="/interview/new" element={<InterviewSetupPage />} />
-        <Route path="/interview/new/question" element={<CustomQuestionPage />} />
+        <Route
+          path="/interview/new/question"
+          element={<CustomQuestionPage />}
+        />
         <Route path="/interviews" element={<Navigate to="/" replace />} />
         <Route path="/interviews/:id" element={<ReviewPage />} />
         <Route path="/interviews/:id/analysis" element={<AnalysisPage />} />

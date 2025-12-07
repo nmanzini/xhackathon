@@ -100,10 +100,7 @@ export function ReviewPage() {
               ? "Interview not found"
               : "No transcript data available"}
           </div>
-          <Link
-            to="/"
-            className="text-[var(--primary-color)] hover:underline"
-          >
+          <Link to="/" className="text-[var(--primary-color)] hover:underline">
             Back to candidates
           </Link>
         </div>
