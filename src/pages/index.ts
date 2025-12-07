@@ -1,4 +1,4 @@
-export * from "./AnalystPage";
+export * from "./AnalysisPage";
 export * from "./InterviewPage";
 export * from "./InterviewListPage";
 export * from "./ReviewPage";

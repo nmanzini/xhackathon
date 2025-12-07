@@ -82,7 +82,7 @@ export function ReviewPage() {
             <div className="flex items-center gap-3">
               <Link
                 to="/reviews"
-                className="text-[var(--text-secondary)] hover:text-[var(--primary-color)] transition-colors"
+                className="text-[var(--primary-color)] hover:opacity-80 transition-opacity"
               >
                 ← Back
               </Link>

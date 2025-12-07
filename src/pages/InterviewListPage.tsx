@@ -72,7 +72,7 @@ export function InterviewListPage() {
             return (
               <div
                 key={interview.id}
-                onClick={() => navigate(`/analyst/${interview.id}`)}
+                onClick={() => navigate(`/analysis/${interview.id}`)}
                 className="block p-5 rounded-lg border border-[var(--border-color)] bg-[var(--card-bg)] shadow-[var(--shadow-md)] transition-all duration-200 cursor-pointer hover:bg-[var(--card-bg-hover)]"
               >
                 <div className="flex justify-between items-start">
