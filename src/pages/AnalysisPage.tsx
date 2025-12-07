@@ -331,7 +331,7 @@ export function AnalysisPage() {
             Interview not found
           </div>
           <Link
-            to="/reviews"
+            to="/interviews"
             className="text-[var(--primary-color)] hover:underline"
           >
             Back to candidates
@@ -359,7 +359,7 @@ export function AnalysisPage() {
     }) || [];
 
   const handleDotClick = (timeMs: number) => {
-    navigate(`/review/${id}?t=${timeMs}`);
+    navigate(`/interviews/${id}?t=${timeMs}`);
   };
 
   return (
@@ -368,7 +368,7 @@ export function AnalysisPage() {
         <div className="flex items-center justify-between mb-8">
           <div className="flex items-center gap-4">
             <Link
-              to="/reviews"
+              to="/interviews"
               className="text-[var(--primary-color)] hover:opacity-80 transition-opacity"
             >
               ← Back
@@ -423,7 +423,7 @@ export function AnalysisPage() {
               Transcript
             </button>
             <Link
-              to={`/review/${id}`}
+              to={`/interviews/${id}`}
               className="px-4 py-2 rounded-lg border border-[var(--border-color)] bg-[var(--card-bg)] text-[var(--primary-color)] hover:bg-[var(--card-bg-hover)] transition-all duration-200"
             >
               View Replay

@@ -1,25 +1,35 @@
 import { useRef, useState, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
-import { CodeEditor, InterviewPanel, ProblemDescription, TestPanel } from "../components";
+import {
+  CodeEditor,
+  InterviewPanel,
+  ProblemDescription,
+  TestPanel,
+} from "../components";
 import { useVoiceInterview, useTestRunner } from "../hooks";
 import { DEFAULT_INTERVIEW } from "../config/interview";
 import { createInterviewOutput } from "../utils/saveInterview";
+import { evaluateCandidate } from "../utils/evaluateCandidate";
 import { interviewsStore } from "../stores/interviewStore";
 import type { Language } from "../types";
 
 // Resizable divider component
-function ResizeHandle({ 
-  direction, 
-  onMouseDown 
-}: { 
-  direction: "horizontal" | "vertical"; 
+function ResizeHandle({
+  direction,
+  onMouseDown,
+}: {
+  direction: "horizontal" | "vertical";
   onMouseDown: (e: React.MouseEvent) => void;
 }) {
   const isHorizontal = direction === "horizontal";
   return (
     <div
       className={`
-        ${isHorizontal ? "w-1 cursor-col-resize hover:w-1" : "h-1 cursor-row-resize hover:h-1"}
+        ${
+          isHorizontal
+            ? "w-1 cursor-col-resize hover:w-1"
+            : "h-1 cursor-row-resize hover:h-1"
+        }
         bg-transparent hover:bg-blue-500/50 active:bg-blue-500/70 transition-colors
         flex-shrink-0 z-10
       `}
@@ -49,11 +59,17 @@ export function InterviewPage() {
 
   // Resize logic - optimized to avoid recreation on every state change
   const handleResize = useCallback(
-    (setter: (v: number) => void, min: number, max: number, direction: "horizontal" | "vertical", invert: boolean) =>
+    (
+        setter: (v: number) => void,
+        min: number,
+        max: number,
+        direction: "horizontal" | "vertical",
+        invert: boolean
+      ) =>
       (e: React.MouseEvent) => {
         e.preventDefault();
         const startPos = direction === "horizontal" ? e.clientX : e.clientY;
-        
+
         // Get the current size from the DOM to avoid closure over state
         const getStartSize = () => {
           if (direction === "horizontal") {
@@ -65,7 +81,8 @@ export function InterviewPage() {
         const startSize = getStartSize();
 
         const handleMouseMove = (moveEvent: MouseEvent) => {
-          const currentPos = direction === "horizontal" ? moveEvent.clientX : moveEvent.clientY;
+          const currentPos =
+            direction === "horizontal" ? moveEvent.clientX : moveEvent.clientY;
           const delta = invert ? startPos - currentPos : currentPos - startPos;
           const newSize = Math.min(max, Math.max(min, startSize + delta));
           setter(newSize);
@@ -80,7 +97,8 @@ export function InterviewPage() {
 
         document.addEventListener("mousemove", handleMouseMove);
         document.addEventListener("mouseup", handleMouseUp);
-        document.body.style.cursor = direction === "horizontal" ? "col-resize" : "row-resize";
+        document.body.style.cursor =
+          direction === "horizontal" ? "col-resize" : "row-resize";
         document.body.style.userSelect = "none";
       },
     [leftWidth, rightWidth, testHeight]
@@ -131,7 +149,7 @@ export function InterviewPage() {
   const handleEndInterview = useCallback(async () => {
     // Stop the voice connection
     stopInterview();
-    
+
     // Create the interview output (runs final hidden tests)
     const interviewOutput = await createInterviewOutput(
       DEFAULT_INTERVIEW,
@@ -139,13 +157,16 @@ export function InterviewPage() {
       codeRef.current,
       language
     );
-    
+
     // Save to store
     const currentInterviews = interviewsStore.get();
     interviewsStore.set([interviewOutput, ...currentInterviews]);
-    
+
+    // Kick off scoring and ranking in parallel (fire and forget)
+    evaluateCandidate(interviewOutput);
+
     // Navigate to the analysis page for this interview
-    navigate(`/analysis/${interviewOutput.id}`);
+    navigate(`/interviews/${interviewOutput.id}/analysis`);
   }, [stopInterview, getFinalTranscript, language, navigate]);
 
   // Wrapper to run tests and send results to AI
@@ -157,14 +178,17 @@ export function InterviewPage() {
   }, [runAll, sendTestResults, testCases]);
 
   // Wrapper for single test run - also notify AI
-  const runOneAndNotifyAI = useCallback(async (testId: string) => {
-    const result = await runOne(testId);
-    // After single test, send ALL results if we have any
-    if (results.length > 0) {
-      sendTestResults(results, testCases);
-    }
-    return result;
-  }, [runOne, results, sendTestResults, testCases]);
+  const runOneAndNotifyAI = useCallback(
+    async (testId: string) => {
+      const result = await runOne(testId);
+      // After single test, send ALL results if we have any
+      if (results.length > 0) {
+        sendTestResults(results, testCases);
+      }
+      return result;
+    },
+    [runOne, results, sendTestResults, testCases]
+  );
 
   // Extract problem title from the question (first line with **)
   const problemTitle =
@@ -173,17 +197,17 @@ export function InterviewPage() {
       .find((line) => line.startsWith("**"))
       ?.replace(/\*\*/g, "") || "Coding Problem";
 
-  const passCount = results.filter(r => r.passed).length;
+  const passCount = results.filter((r) => r.passed).length;
 
   return (
     <div className="h-screen w-screen flex bg-[var(--bg-primary)] p-4 gap-0">
       {/* Left: Problem Description */}
-      <div 
+      <div
         className="h-full shrink-0 rounded-l-xl border border-[var(--border-color)] shadow-[var(--shadow-lg)] overflow-hidden bg-[var(--card-bg)] flex flex-col transition-all duration-200"
         style={{ width: leftCollapsed ? 40 : leftWidth }}
       >
         {/* Collapse header */}
-        <div 
+        <div
           className="flex items-center gap-2 px-3 py-2 border-b border-[var(--border-color)] bg-[var(--bg-secondary)] cursor-pointer select-none"
           onClick={() => setLeftCollapsed(!leftCollapsed)}
         >
@@ -191,7 +215,9 @@ export function InterviewPage() {
             {leftCollapsed ? "▶" : "◀"}
           </span>
           {!leftCollapsed && (
-            <span className="text-sm font-medium text-[var(--text-primary)]">Problem</span>
+            <span className="text-sm font-medium text-[var(--text-primary)]">
+              Problem
+            </span>
           )}
         </div>
         {!leftCollapsed && (
@@ -206,9 +232,15 @@ export function InterviewPage() {
 
       {/* Left resize handle */}
       {!leftCollapsed && (
-        <ResizeHandle 
-          direction="horizontal" 
-          onMouseDown={handleResize(setLeftWidth, 200, 600, "horizontal", false)} 
+        <ResizeHandle
+          direction="horizontal"
+          onMouseDown={handleResize(
+            setLeftWidth,
+            200,
+            600,
+            "horizontal",
+            false
+          )}
         />
       )}
 
@@ -216,7 +248,9 @@ export function InterviewPage() {
       <div className="flex-1 h-full min-w-0 flex flex-col gap-0 border-y border-[var(--border-color)] shadow-[var(--shadow-lg)] overflow-hidden bg-[var(--card-bg)]">
         {/* Language Selector Header */}
         <div className="flex items-center gap-3 px-4 py-2 border-b border-[var(--border-color)] bg-[var(--bg-secondary)]">
-          <label className="text-sm text-[var(--text-secondary)]">Language:</label>
+          <label className="text-sm text-[var(--text-secondary)]">
+            Language:
+          </label>
           <select
             value={language}
             onChange={(e) => handleLanguageChange(e.target.value as Language)}
@@ -226,7 +260,7 @@ export function InterviewPage() {
             <option value="python">Python</option>
           </select>
         </div>
-        
+
         {/* Code Editor */}
         <div className="flex-1 min-h-0">
           <CodeEditor
@@ -238,19 +272,25 @@ export function InterviewPage() {
 
         {/* Test resize handle */}
         {!testCollapsed && (
-          <ResizeHandle 
-            direction="vertical" 
-            onMouseDown={handleResize(setTestHeight, 100, 800, "vertical", true)} 
+          <ResizeHandle
+            direction="vertical"
+            onMouseDown={handleResize(
+              setTestHeight,
+              100,
+              800,
+              "vertical",
+              true
+            )}
           />
         )}
-        
+
         {/* Test Panel */}
-        <div 
+        <div
           className="border-t border-[var(--border-color)] bg-[var(--card-bg)] flex flex-col transition-all duration-200"
           style={{ height: testCollapsed ? 40 : testHeight }}
         >
           {/* Test collapse header */}
-          <div 
+          <div
             className="flex items-center justify-between px-4 py-2 bg-[var(--bg-secondary)] cursor-pointer select-none"
             onClick={() => setTestCollapsed(!testCollapsed)}
           >
@@ -262,7 +302,13 @@ export function InterviewPage() {
                 Test Cases
               </span>
               {results.length > 0 && (
-                <span className={`text-xs ${passCount === results.length ? "text-emerald-500" : "text-amber-500"}`}>
+                <span
+                  className={`text-xs ${
+                    passCount === results.length
+                      ? "text-emerald-500"
+                      : "text-amber-500"
+                  }`}
+                >
                   ({passCount}/{results.length} passed)
                 </span>
               )}
@@ -298,24 +344,32 @@ export function InterviewPage() {
 
       {/* Right resize handle */}
       {!rightCollapsed && (
-        <ResizeHandle 
-          direction="horizontal" 
-          onMouseDown={handleResize(setRightWidth, 200, 600, "horizontal", true)} 
+        <ResizeHandle
+          direction="horizontal"
+          onMouseDown={handleResize(
+            setRightWidth,
+            200,
+            600,
+            "horizontal",
+            true
+          )}
         />
       )}
 
       {/* Right: Interview Panel */}
-      <div 
+      <div
         className="h-full shrink-0 rounded-r-xl border border-[var(--border-color)] shadow-[var(--shadow-lg)] overflow-hidden bg-[var(--card-bg)] flex flex-col transition-all duration-200"
         style={{ width: rightCollapsed ? 40 : rightWidth }}
       >
         {/* Collapse header */}
-        <div 
+        <div
           className="flex items-center gap-2 px-3 py-2 border-b border-[var(--border-color)] bg-[var(--bg-secondary)] cursor-pointer select-none"
           onClick={() => setRightCollapsed(!rightCollapsed)}
         >
           {!rightCollapsed && (
-            <span className="text-sm font-medium text-[var(--text-primary)] flex-1">Interview</span>
+            <span className="text-sm font-medium text-[var(--text-primary)] flex-1">
+              Interview
+            </span>
           )}
           <span className="text-[var(--text-secondary)] text-xs">
             {rightCollapsed ? "◀" : "▶"}
