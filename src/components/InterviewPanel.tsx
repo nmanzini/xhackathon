@@ -1,3 +1,4 @@
+import { useEffect, useRef } from "react";
 import type { TranscriptEntry } from "../hooks/useTranscript";
 
 interface InterviewPanelProps {
@@ -21,6 +22,13 @@ export function InterviewPanel({
   onStop,
   hideHeader = false,
 }: InterviewPanelProps) {
+  const transcriptEndRef = useRef<HTMLDivElement>(null);
+
+  // Auto-scroll to bottom when transcript updates
+  useEffect(() => {
+    transcriptEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  }, [transcript]);
+
   return (
     <div
       className="h-full flex flex-col"
@@ -230,6 +238,8 @@ export function InterviewPanel({
               );
             })
           )}
+          {/* Invisible element at the end for auto-scroll */}
+          <div ref={transcriptEndRef} />
         </div>
       </div>
 
