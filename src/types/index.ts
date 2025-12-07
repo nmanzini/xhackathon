@@ -21,6 +21,7 @@ export interface TranscriptEntry {
 }
 
 export interface InterviewOutput {
+  id: string;
   input: InterviewInput;
   compiledSystemPrompt: string;
   transcript: TranscriptEntry[];
