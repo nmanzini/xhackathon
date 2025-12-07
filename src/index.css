@@ -167,3 +167,30 @@ h1 {
   background: var(--primary-color);
   filter: brightness(1.2);
 }
+
+/* Diff highlighting animations */
+@keyframes flashGreen {
+  0% {
+    background-color: rgba(31, 182, 126, 0.5);
+  }
+  100% {
+    background-color: transparent;
+  }
+}
+
+@keyframes flashRed {
+  0% {
+    background-color: rgba(224, 61, 99, 0.5);
+  }
+  100% {
+    background-color: transparent;
+  }
+}
+
+.diff-added-line {
+  animation: flashGreen 1s ease-out forwards;
+}
+
+.diff-removed-line {
+  animation: flashRed 1s ease-out forwards;
+}
