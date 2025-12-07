@@ -30,21 +30,32 @@ Explanation: nums[0] + nums[1] = 2 + 7 = 9
   },
 
   helpLevel: "low",
-};
 
-/**
- * Starter code template for the problem
- */
-export const DEFAULT_STARTER_CODE = `// Two Sum Problem
-// Return indices of two numbers that add up to target
+  expectedSolution: `function two_sum(nums, target) {
+  const map = new Map();
+  for (let i = 0; i < nums.length; i++) {
+    const complement = target - nums[i];
+    if (map.has(complement)) {
+      return [map.get(complement), i];
+    }
+    map.set(nums[i], i);
+  }
+  return [];
+}`,
 
-function twoSum(nums: number[], target: number): number[] {
+  functionName: "two_sum",
+
+  starterCode: {
+    javascript: `function two_sum(nums, target) {
   // Your solution here
   
-}
+}`,
+    python: `def two_sum(nums, target):
+    # Your solution here
+    pass`,
+  },
 
-// Test your solution
-const nums = [2, 7, 11, 15];
-const target = 9;
-console.log(twoSum(nums, target)); // Expected: [0, 1]
-`;
+  testCases: [
+    { id: "1", input: [[2, 7, 11, 15], 9], expected: [0, 1] },
+  ],
+};

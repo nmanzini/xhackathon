@@ -77,7 +77,7 @@ export function CodeEditor({
         <div className="h-full pl-3 bg-[var(--code-bg)]">
           <Editor
             height="100%"
-            defaultLanguage={language}
+            language={language}
             theme={themeName}
             value={value}
             onChange={onChange}

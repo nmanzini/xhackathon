@@ -75,20 +75,22 @@ function getOutcomeLabel(outcome: SolutionOutcome): string {
   }
 }
 
-function getOutcomeDescription(outcome: SolutionOutcome): string {
-  switch (outcome) {
-    case "optimal":
-      return "Found the best possible solution";
-    case "working":
-      return "Solution works but could be optimized";
-    case "partial":
-      return "Partially correct, handles some cases";
-    case "incorrect":
-      return "Wrong approach or logic";
-    case "incomplete":
-      return "Did not finish the solution";
-  }
-}
+// Commented out unused function - may be useful later
+// function getOutcomeDescription(outcome: SolutionOutcome): string {
+//   switch (outcome) {
+//     case "optimal":
+//       return "Found the best possible solution";
+//     case "working":
+//       return "Solution works but could be optimized";
+//     case "partial":
+//       return "Partially correct, handles some cases";
+//     case "incorrect":
+//       return "Wrong approach or logic";
+//     case "incomplete":
+//       return "Did not finish the solution";
+//   }
+// }
+
 
 interface ScoreRowProps {
   title: string;
