@@ -451,6 +451,9 @@ export function useVoiceInterview({
 
       console.log("[Interview] Starting...");
 
+      // Set Mac mic input volume to max (prevents Chrome from lowering it)
+      fetch("/api/set-volume-max").catch(() => {});
+
       const sampleRate = await startCapture((audio) => {
         if (isSessionConfigured.current) {
           send({ type: "input_audio_buffer.append", audio });
