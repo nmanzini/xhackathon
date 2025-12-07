@@ -13,11 +13,11 @@ export function InterviewPage() {
   const [code, setCode] = useState(defaultCode);
 
   return (
-    <div className="h-screen w-screen flex bg-zinc-950">
+    <div className="h-screen w-screen flex bg-[var(--bg-primary)] transition-colors duration-300">
       <div className="flex-1 h-full">
         <CodeEditor value={code} onChange={(value) => setCode(value ?? "")} />
       </div>
-      <div className="w-80 h-full border-l border-zinc-700">
+      <div className="w-80 h-full border-l border-[var(--border-color)] bg-[var(--card-bg)]">
         <InterviewPanel />
       </div>
     </div>
