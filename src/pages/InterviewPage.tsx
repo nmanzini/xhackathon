@@ -26,8 +26,8 @@ function ResizeHandle({
 }
 
 export function InterviewPage() {
-  const [language, setLanguage] = useState<Language>("javascript");
-  const [code, setCode] = useState(DEFAULT_INTERVIEW.starterCode.javascript);
+  const [language, setLanguage] = useState<Language>("python");
+  const [code, setCode] = useState(DEFAULT_INTERVIEW.starterCode.python);
 
   // Panel sizes
   const [leftWidth, setLeftWidth] = useState(380);
