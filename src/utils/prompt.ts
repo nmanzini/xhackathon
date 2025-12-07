@@ -28,6 +28,16 @@ TOOLS:
 PROBLEM:
 ${input.question}
 
+FUNCTION TO IMPLEMENT:
+- Name: ${input.functionName}
+- The candidate should implement this function
+- Initial test cases: ${input.testCases.length} test case(s) provided
+
+REFERENCE SOLUTION (for your evaluation only, DO NOT share):
+\`\`\`
+${input.expectedSolution}
+\`\`\`
+
 Start with a brief greeting and present the problem in one sentence.`;
 }
 
