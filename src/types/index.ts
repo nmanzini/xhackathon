@@ -1,7 +1,21 @@
 export type HelpLevel = "none" | "low" | "medium" | "high";
+export type Language = "javascript" | "python";
 
 export interface UserInfo {
   name: string;
+}
+
+export interface TestCase {
+  id: string;
+  input: any[];
+  expected: any;
+}
+
+export interface TestResult {
+  id: string;
+  passed: boolean;
+  actual?: any;
+  error?: string;
 }
 
 export interface InterviewInput {
@@ -10,6 +24,9 @@ export interface InterviewInput {
   userInfo: UserInfo;
   helpLevel: HelpLevel;
   expectedSolution: string;
+  functionName: string;
+  starterCode: { javascript: string; python: string };
+  testCases: TestCase[];
 }
 
 export type TranscriptEntryRole = "llm" | "user";

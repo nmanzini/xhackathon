@@ -6,12 +6,13 @@
 
 import { useState, useCallback, useRef } from "react";
 
-export type TranscriptRole = "user" | "assistant" | "code";
+export type TranscriptRole = "user" | "assistant" | "code" | "tool";
 
 export interface TranscriptEntry {
   timestamp: string;
   role: TranscriptRole;
   content: string;
+  toolName?: string; // For tool role entries
 }
 
 interface UseTranscriptReturn {
@@ -19,6 +20,7 @@ interface UseTranscriptReturn {
   addOrUpdateUserMessage: (itemId: string, content: string) => void;
   updateAssistantMessage: (content: string) => void;
   addCodeSent: (code: string) => void;
+  addToolCall: (toolName: string, result: string) => void;
   clear: () => void;
 }
 
@@ -72,6 +74,13 @@ export function useTranscript(): UseTranscriptReturn {
     addEntry("code", code);
   }, [addEntry]);
 
+  const addToolCall = useCallback((toolName: string, result: string) => {
+    setTranscript((prev) => [
+      ...prev,
+      { timestamp: new Date().toISOString(), role: "tool", content: result, toolName },
+    ]);
+  }, []);
+
   const clear = useCallback(() => {
     setTranscript([]);
     itemIdMapRef.current = new Map();
@@ -82,6 +91,7 @@ export function useTranscript(): UseTranscriptReturn {
     addOrUpdateUserMessage,
     updateAssistantMessage,
     addCodeSent,
+    addToolCall,
     clear,
   };
 }

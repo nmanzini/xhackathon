@@ -5,37 +5,104 @@
  * FLOW:
  * 1. User speaks → Server VAD detects end → committed
  * 2. Server transcribes → conversation.item.added (user transcript)
- * 3. AI responds, can call get_code tool if it wants to see the code
- * 4. We respond to tool calls with current code
+ * 3. AI responds, can call tools (get_code, run_tests, end_interview)
+ * 4. We respond to tool calls with appropriate data
  */
 
 import { useCallback, useRef, useState } from "react";
 import { useAudioStream } from "./useAudioStream";
 import { useTranscript } from "./useTranscript";
 import { buildSystemPrompt } from "../utils/prompt";
-import type { InterviewInput } from "../types";
+import type { InterviewInput, Language, TestResult } from "../types";
 import type { Message } from "../types/messages";
 
 const XAI_REALTIME_URL = "wss://api.x.ai/v1/realtime";
 const XAI_API_KEY = import.meta.env.VITE_XAI_API_KEY || "";
 const VOICE = "ash";
 
-// Tool definition for getting current code
-const GET_CODE_TOOL = {
-  type: "function",
-  name: "get_code",
-  description: "Get the candidate's current code from the editor. Call this whenever you want to see what they've written or when they ask you to look at their code.",
-  parameters: {
-    type: "object",
-    properties: {},
-    required: [],
+// Tool definitions
+const TOOLS = [
+  {
+    type: "function",
+    name: "get_code",
+    description: "Get the candidate's current code from the editor. Call this whenever you want to see what they've written or when they ask you to look at their code.",
+    parameters: {
+      type: "object",
+      properties: {},
+      required: [],
+    },
   },
-};
+  {
+    type: "function",
+    name: "run_tests",
+    description: "Run all test cases against the candidate's current code. Returns pass/fail results for each test.",
+    parameters: {
+      type: "object",
+      properties: {},
+      required: [],
+    },
+  },
+  {
+    type: "function",
+    name: "add_test_case",
+    description: "Add a new test case to validate the candidate's code. Use this to create edge cases or examples that will help the candidate understand issues with their solution.",
+    parameters: {
+      type: "object",
+      properties: {
+        input: {
+          type: "array",
+          description: "Array of function arguments (e.g., [[2,7,11,15], 9] for two_sum(nums, target))",
+        },
+        expected: {
+          description: "Expected return value from the function",
+        },
+      },
+      required: ["input", "expected"],
+    },
+  },
+  {
+    type: "function",
+    name: "end_interview",
+    description: "End the interview and provide final assessment. Call this when the interview is complete.",
+    parameters: {
+      type: "object",
+      properties: {
+        score: {
+          type: "number",
+          description: "Score from 1-10 based on candidate's performance",
+        },
+        feedback: {
+          type: "string",
+          description: "Brief feedback summary for the candidate",
+        },
+      },
+      required: ["score", "feedback"],
+    },
+  },
+];
 
-export function useVoiceInterview(
-  interviewInput: InterviewInput,
-  codeRef: React.MutableRefObject<string>
-) {
+interface EndInterviewData {
+  score: number;
+  feedback: string;
+}
+
+interface UseVoiceInterviewOptions {
+  interviewInput: InterviewInput;
+  codeRef: React.MutableRefObject<string>;
+  language: Language;
+  onRunTests: () => Promise<TestResult[]>;
+  onAddTest: (input: any[], expected: any) => void;
+  onEndInterview?: (data: EndInterviewData) => void;
+}
+
+export function useVoiceInterview({
+  interviewInput,
+  codeRef,
+  language,
+  onRunTests,
+  onAddTest,
+  onEndInterview,
+}: UseVoiceInterviewOptions) {
   const [isConnected, setIsConnected] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -51,6 +118,7 @@ export function useVoiceInterview(
     addOrUpdateUserMessage,
     updateAssistantMessage,
     addCodeSent,
+    addToolCall,
     clear: clearTranscript,
   } = useTranscript();
 
@@ -76,39 +144,108 @@ export function useVoiceInterview(
             output: { format: { type: "audio/pcm", rate: sampleRate } },
           },
           turn_detection: { type: "server_vad" },
-          tools: [GET_CODE_TOOL],
+          tools: TOOLS,
         },
       });
     },
     [interviewInput, send]
   );
 
-  // Handle tool call - respond with current code
+  // Handle tool calls from AI
   const handleToolCall = useCallback(
-    (callId: string, toolName: string) => {
+    async (callId: string, toolName: string, args: string) => {
+      console.log("[Interview] Tool call:", toolName, "call_id:", callId);
+      
+      let output = "";
+
       if (toolName === "get_code") {
         const code = codeRef.current;
-        console.log("[Interview] Tool call: get_code");
         console.log("[Interview] Returning code:", code.substring(0, 100) + "...");
-
+        
         // Add to UI transcript so user sees when AI checks code
         addCodeSent(code);
-
-        // Send tool response
-        send({
-          type: "conversation.item.create",
-          item: {
-            type: "function_call_output",
-            call_id: callId,
-            output: code || "(empty - no code written yet)",
-          },
-        });
-
-        // Continue the response
-        send({ type: "response.create" });
+        
+        output = `Language: ${language}\n\nCode:\n${code || "(empty - no code written yet)"}`;
+      } 
+      else if (toolName === "run_tests") {
+        console.log("[Interview] Running tests...");
+        
+        try {
+          const results = await onRunTests();
+          const passCount = results.filter(r => r.passed).length;
+          
+          const resultLines = results.map((r, idx) => {
+            if (r.passed) return `Test ${idx + 1}: PASS`;
+            if (r.error) return `Test ${idx + 1}: ERROR - ${r.error}`;
+            return `Test ${idx + 1}: FAIL - expected ${JSON.stringify(interviewInput.testCases[idx]?.expected)}, got ${JSON.stringify(r.actual)}`;
+          });
+          
+          output = `Test Results: ${passCount}/${results.length} passed\n\n${resultLines.join("\n")}`;
+          
+          // Add to transcript
+          addToolCall("run_tests", `${passCount}/${results.length} tests passed`);
+        } catch (err) {
+          output = `Error running tests: ${err instanceof Error ? err.message : String(err)}`;
+          addToolCall("run_tests", `Error: ${err instanceof Error ? err.message : String(err)}`);
+        }
       }
+      else if (toolName === "add_test_case") {
+        console.log("[Interview] Adding test case with args:", args);
+        
+        try {
+          const parsed = JSON.parse(args || "{}");
+          const input = parsed.input;
+          const expected = parsed.expected;
+          
+          if (!Array.isArray(input)) {
+            output = "Error: input must be an array of function arguments";
+            addToolCall("add_test_case", "Error: invalid input format");
+          } else {
+            onAddTest(input, expected);
+            output = `Test case added: input=${JSON.stringify(input)}, expected=${JSON.stringify(expected)}`;
+            addToolCall("add_test_case", `Added: ${JSON.stringify(input)} → ${JSON.stringify(expected)}`);
+          }
+        } catch (err) {
+          output = `Error adding test case: ${err instanceof Error ? err.message : String(err)}`;
+          addToolCall("add_test_case", `Error: ${err instanceof Error ? err.message : String(err)}`);
+        }
+      }
+      else if (toolName === "end_interview") {
+        console.log("[Interview] Ending interview with args:", args);
+        
+        try {
+          const parsed = JSON.parse(args || "{}");
+          const score = parsed.score ?? 5;
+          const feedback = parsed.feedback ?? "Interview completed.";
+          
+          output = `Interview ended. Score: ${score}/10. Feedback: ${feedback}`;
+          
+          // Notify parent component
+          if (onEndInterview) {
+            onEndInterview({ score, feedback });
+          }
+        } catch {
+          output = "Interview ended.";
+        }
+      }
+      else {
+        output = `Unknown tool: ${toolName}`;
+      }
+
+      // Send tool response
+      send({
+        type: "conversation.item.create",
+        item: {
+          type: "function_call_output",
+          call_id: callId,
+          output,
+        },
+      });
+
+      // Continue the response
+      send({ type: "response.create" });
     },
-    [codeRef, send, addCodeSent]
+    [codeRef, language, addCodeSent, addToolCall, onRunTests, onAddTest, onEndInterview, interviewInput.testCases, send]
   );
 
   // Send initial greeting to start interview
@@ -166,8 +303,8 @@ export function useVoiceInterview(
       if (type === "response.function_call_arguments.done" && "call_id" in message && "name" in message) {
         const callId = message.call_id as string;
         const toolName = message.name as string;
-        console.log("[Interview] Tool call:", toolName, "call_id:", callId);
-        handleToolCall(callId, toolName);
+        const args = (message as { arguments?: string }).arguments || "";
+        handleToolCall(callId, toolName, args);
       }
 
       // User transcript received
@@ -193,7 +330,7 @@ export function useVoiceInterview(
             // Add or update user message (same item ID = update existing entry)
             addOrUpdateUserMessage(item.id, content.transcript);
             
-            // Trigger AI response (AI will call get_code tool if it wants to see code)
+            // Trigger AI response (AI will call tools if it wants)
             send({ type: "response.create" });
             break;
           }
