@@ -20,22 +20,13 @@ const XAI_REALTIME_URL = "wss://api.x.ai/v1/realtime";
 const XAI_API_KEY = import.meta.env.VITE_XAI_API_KEY || "";
 const VOICE = "ash";
 
-// Tool definitions - AI can get code, run tests, and add test cases
+// Tool definitions - AI can ONLY get code and add test cases
+// User runs tests manually, AI sees results automatically
 const TOOLS = [
   {
     type: "function",
     name: "get_code",
     description: "Get the candidate's current code from the editor. Call this whenever you want to see what they've written or when they ask you to look at their code.",
-    parameters: {
-      type: "object",
-      properties: {},
-      required: [],
-    },
-  },
-  {
-    type: "function",
-    name: "run_tests",
-    description: "Run all test cases against the candidate's current code. Returns pass/fail results for each test. Use this proactively after they write code.",
     parameters: {
       type: "object",
       properties: {},
@@ -68,6 +59,7 @@ interface UseVoiceInterviewOptions {
   language: Language;
   onRunTests: () => Promise<TestResult[]>;
   onAddTest: (input: any[], expected: any) => void;
+  getTestCases: () => TestCase[];
 }
 
 export function useVoiceInterview({
@@ -76,6 +68,7 @@ export function useVoiceInterview({
   language,
   onRunTests,
   onAddTest,
+  getTestCases,
 }: UseVoiceInterviewOptions) {
   const [isConnected, setIsConnected] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -97,8 +90,12 @@ export function useVoiceInterview({
     updateAssistantMessage,
     addCodeSent,
     addToolCall,
+    addTestRun,
     clear: clearTranscript,
-  } = useTranscript();
+  } = useTranscript({ 
+    getCode: () => codeRef.current,
+    getTestCases,
+  });
 
   // === HELPERS ===
 
@@ -164,28 +161,6 @@ export function useVoiceInterview({
           
           output = `Language: ${language}\n\nCode:\n${code || "(empty - no code written yet)"}`;
         } 
-        else if (toolName === "run_tests") {
-          console.log("[Interview] AI running tests...");
-          
-          try {
-            const results = await onRunTests();
-            const passCount = results.filter(r => r.passed).length;
-            
-            const resultLines = results.map((r, idx) => {
-              if (r.passed) return `Test ${idx + 1}: ✓ PASS`;
-              if (r.error) return `Test ${idx + 1}: ✗ ERROR - ${r.error}`;
-              return `Test ${idx + 1}: ✗ FAIL - expected ${JSON.stringify(interviewInput.testCases[idx]?.expected)}, got ${JSON.stringify(r.actual)}`;
-            });
-            
-            output = `Test Results: ${passCount}/${results.length} passed\n\n${resultLines.join("\n")}`;
-            
-            // Add to transcript - user sees results in UI
-            addToolCall("run_tests", `${passCount}/${results.length} tests passed`);
-          } catch (err) {
-            output = `Error running tests: ${err instanceof Error ? err.message : String(err)}`;
-            addToolCall("run_tests", `Error: ${err instanceof Error ? err.message : String(err)}`);
-          }
-        }
         else if (toolName === "add_test_case") {
           console.log("[Interview] Adding test case with args:", args);
           
@@ -458,6 +433,9 @@ export function useVoiceInterview({
     (results: TestResult[], testCases: TestCase[]) => {
       if (!isConnected) return;
 
+      // Add test run to transcript with full details
+      addTestRun(results);
+
       const passCount = results.filter(r => r.passed).length;
       
       const resultLines = results.map((r, idx) => {
@@ -485,12 +463,14 @@ export function useVoiceInterview({
       // This allows the user to speak and ask about the results naturally
       // The AI will see the results when the user speaks next
       console.log("[Interview] Test results added to context. User can now speak about them.");
-      
-      // Add to UI transcript
-      addToolCall("test_results", `${passCount}/${results.length} tests passed`);
     },
-    [isConnected, send, addToolCall]
+    [isConnected, send, addTestRun]
   );
+
+  // Get final transcript data for saving
+  const getFinalTranscript = useCallback(() => {
+    return transcript;
+  }, [transcript]);
 
   return {
     isConnected,
@@ -501,5 +481,6 @@ export function useVoiceInterview({
     startInterview,
     stopInterview,
     sendTestResults,
+    getFinalTranscript,
   };
 }

@@ -1,7 +1,10 @@
 import { useRef, useState, useCallback } from "react";
+import { useNavigate } from "react-router-dom";
 import { CodeEditor, InterviewPanel, ProblemDescription, TestPanel } from "../components";
 import { useVoiceInterview, useTestRunner } from "../hooks";
 import { DEFAULT_INTERVIEW } from "../config/interview";
+import { createInterviewOutput } from "../utils/saveInterview";
+import { interviewsStore } from "../stores/interviewStore";
 import type { Language } from "../types";
 
 // Resizable divider component
@@ -26,6 +29,7 @@ function ResizeHandle({
 }
 
 export function InterviewPage() {
+  const navigate = useNavigate();
   const [language, setLanguage] = useState<Language>("python");
   const [code, setCode] = useState(DEFAULT_INTERVIEW.starterCode.python);
 
@@ -113,13 +117,34 @@ export function InterviewPage() {
     startInterview,
     stopInterview,
     sendTestResults,
+    getFinalTranscript,
   } = useVoiceInterview({
     interviewInput: DEFAULT_INTERVIEW,
     codeRef,
     language,
     onRunTests: runAll,
     onAddTest: addTest,
+    getTestCases: () => testCases,
   });
+
+  // Handle ending interview - save and navigate to reviews
+  const handleEndInterview = useCallback(() => {
+    // Stop the voice connection
+    stopInterview();
+    
+    // Create the interview output (code is already in each transcript entry)
+    const interviewOutput = createInterviewOutput(
+      DEFAULT_INTERVIEW,
+      getFinalTranscript()
+    );
+    
+    // Save to store
+    const currentInterviews = interviewsStore.get();
+    interviewsStore.set([interviewOutput, ...currentInterviews]);
+    
+    // Navigate to the analysis page for this interview
+    navigate(`/analysis/${interviewOutput.id}`);
+  }, [stopInterview, getFinalTranscript, navigate]);
 
   // Wrapper to run tests and send results to AI
   const runAllAndNotifyAI = useCallback(async () => {
@@ -303,7 +328,7 @@ export function InterviewPage() {
               transcript={transcript}
               error={error}
               onStart={startInterview}
-              onStop={stopInterview}
+              onStop={handleEndInterview}
               hideHeader
             />
           </div>
