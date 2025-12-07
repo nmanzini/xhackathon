@@ -4,6 +4,7 @@
  */
 
 import { useState } from "react";
+import { Check, X, Circle, Trash2, Plus, ChevronDown, ChevronRight } from "lucide-react";
 import type { TestCase, TestResult } from "../types";
 
 interface TestPanelProps {
@@ -72,9 +73,7 @@ export function TestPanel({
           onClick={() => setIsExpanded(!isExpanded)}
         >
           <div className="flex items-center gap-2">
-            <span className="text-[var(--text-secondary)]">
-              {isExpanded ? "▼" : "▶"}
-            </span>
+            {isExpanded ? <ChevronDown className="w-4 h-4 text-[var(--text-secondary)]" /> : <ChevronRight className="w-4 h-4 text-[var(--text-secondary)]" />}
             <span className="font-medium text-[var(--text-primary)]">
               Test Cases
             </span>
@@ -103,13 +102,11 @@ export function TestPanel({
         <div className="px-4 pb-3 space-y-2 overflow-y-auto">
           {testCases.map((test, idx) => {
             const result = getResultForTest(test.id);
-            const statusIcon = !result
-              ? "○"
+            const StatusIcon = !result
+              ? Circle
               : result.passed
-              ? "✓"
-              : result.error
-              ? "✗"
-              : "✗";
+              ? Check
+              : X;
             const statusColor = !result
               ? "text-zinc-500"
               : result.passed
@@ -124,9 +121,7 @@ export function TestPanel({
                 key={test.id}
                 className="flex items-start gap-2 p-2 rounded bg-[var(--bg-secondary)] hover:bg-[var(--bg-tertiary)] transition-colors group"
               >
-                <span className={`font-mono text-sm ${statusColor}`}>
-                  {statusIcon}
-                </span>
+                <StatusIcon className={`w-4 h-4 mt-0.5 ${statusColor}`} />
                 
                 <div className="flex-1 min-w-0">
                   <div className="text-sm text-[var(--text-primary)]">
@@ -161,10 +156,10 @@ export function TestPanel({
                     <button
                       onClick={() => onRemoveTest(test.id)}
                       disabled={isRunning}
-                      className="px-2 py-1 text-xs bg-red-600 hover:bg-red-700 disabled:bg-zinc-700 text-white rounded transition-colors"
+                      className="p-1 bg-red-600 hover:bg-red-700 disabled:bg-zinc-700 text-white rounded transition-colors"
                       title="Delete this test case"
                     >
-                      ✕
+                      <Trash2 className="w-3.5 h-3.5" />
                     </button>
                   )}
                 </div>
@@ -207,9 +202,9 @@ export function TestPanel({
           ) : (
             <button
               onClick={() => setShowAddForm(true)}
-              className="w-full p-2 text-sm text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-secondary)] rounded border border-dashed border-[var(--border-color)] transition-colors"
+              className="w-full p-2 text-sm text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-secondary)] rounded border border-dashed border-[var(--border-color)] transition-colors flex items-center justify-center gap-1.5"
             >
-              + Add Test Case
+              <Plus className="w-4 h-4" /> Add Test Case
             </button>
           )}
         </div>

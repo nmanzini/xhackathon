@@ -129,7 +129,7 @@ export function useTranscript({ getCode, getTestCases }: UseTranscriptOptions): 
     const message = `Test Run: ${passed}/${total} passed`;
     
     // Enrich results with test case data (input, expected)
-    const enrichedResults = results.map((result, idx) => {
+    const enrichedResults = results.map((result) => {
       // Find the matching test case by ID
       const testCase = testCases.find(tc => tc.id === result.id);
       

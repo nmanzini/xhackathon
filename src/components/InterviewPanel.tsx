@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from "react";
+import { Bot, User, FileCode, Wrench, FlaskConical, Check, X, Mic, StopCircle, ChevronDown } from "lucide-react";
 import type { TranscriptEntry } from "../hooks/useTranscript";
 
 interface InterviewPanelProps {
@@ -62,20 +63,7 @@ export function InterviewPanel({
                   : "rgba(91, 179, 216, 0.1)",
               }}
             >
-              <svg
-                className="w-6 h-6"
-                style={{ color: "var(--invite-color)" }}
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z"
-                />
-              </svg>
+              <Mic className="w-6 h-6" style={{ color: "var(--invite-color)" }} />
             </div>
             <div className="flex-1">
               <h2 className="text-xl font-semibold text-[var(--text-primary)] mb-1">
@@ -189,11 +177,11 @@ export function InterviewPanel({
               
               const getLabel = () => {
                 switch (entry.role) {
-                  case "assistant": return "🤖 AI Interviewer";
-                  case "code": return "📄 Code Sent";
-                  case "tool": return `🔧 ${entry.toolName === "run_tests" ? "Tests Run" : entry.toolName === "add_test_case" ? "Test Added" : entry.toolName || "Tool"}`;
-                  case "test_run": return "🧪 Test Run";
-                  default: return "👤 Candidate";
+                  case "assistant": return <><Bot className="w-4 h-4" /> AI Interviewer</>;
+                  case "code": return <><FileCode className="w-4 h-4" /> Code Sent</>;
+                  case "tool": return <><Wrench className="w-4 h-4" /> {entry.toolName === "run_tests" ? "Tests Run" : entry.toolName === "add_test_case" ? "Test Added" : entry.toolName || "Tool"}</>;
+                  case "test_run": return <><FlaskConical className="w-4 h-4" /> Test Run</>;
+                  default: return <><User className="w-4 h-4" /> Candidate</>;
                 }
               };
               
@@ -211,7 +199,7 @@ export function InterviewPanel({
                   }}
                 >
                   <div className="text-sm font-mono text-[var(--text-secondary)] mb-3 flex items-center gap-2">
-                    <span className="font-medium" style={{ color: style.color }}>
+                    <span className="font-medium inline-flex items-center gap-1.5" style={{ color: style.color }}>
                       {getLabel()}
                     </span>
                     <span>•</span>
@@ -228,14 +216,7 @@ export function InterviewPanel({
                         <span className="text-sm font-medium text-[var(--text-primary)]">
                           {expandedCodeBlocks.has(index) ? "Hide code" : "View code"} ({entry.content.split('\n').length} lines)
                         </span>
-                        <svg
-                          className={`w-5 h-5 text-[var(--text-secondary)] transition-transform ${expandedCodeBlocks.has(index) ? 'rotate-180' : ''}`}
-                          fill="none"
-                          stroke="currentColor"
-                          viewBox="0 0 24 24"
-                        >
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                        </svg>
+                        <ChevronDown className={`w-5 h-5 text-[var(--text-secondary)] transition-transform ${expandedCodeBlocks.has(index) ? 'rotate-180' : ''}`} />
                       </button>
                       {expandedCodeBlocks.has(index) && (
                         <pre className="mt-2 text-sm font-mono overflow-auto max-h-60 whitespace-pre-wrap p-4 rounded-lg text-[var(--text-secondary)] bg-[var(--bg-primary)] border border-[var(--border-color)]">
@@ -255,7 +236,7 @@ export function InterviewPanel({
                             className={`p-3 rounded-lg border ${result.passed ? 'bg-emerald-500/10 border-emerald-500/30' : 'bg-red-500/10 border-red-500/30'}`}
                           >
                             <div className="flex items-center gap-2 font-medium">
-                              <span>{result.passed ? '✓' : '✗'}</span>
+                              {result.passed ? <Check className="w-4 h-4 text-emerald-500" /> : <X className="w-4 h-4 text-red-500" />}
                               <span>Test {idx + 1}</span>
                             </div>
                             {!result.passed && (
@@ -294,7 +275,7 @@ export function InterviewPanel({
               color: "var(--primary-color)",
             }}
           >
-            <MicIcon />
+            <Mic className="w-5 h-5" />
             Start Interview
           </button>
         ) : (
@@ -303,7 +284,7 @@ export function InterviewPanel({
             className="w-full py-3 px-4 rounded-lg font-medium transition-all duration-200 flex items-center justify-center gap-2 text-white shadow-[var(--shadow-md)] hover:shadow-[var(--shadow-lg)]"
             style={{ backgroundColor: "var(--alert-color)" }}
           >
-            <StopIcon />
+            <StopCircle className="w-5 h-5" />
             End Interview
           </button>
         )}
@@ -312,45 +293,3 @@ export function InterviewPanel({
   );
 }
 
-// Simple icons
-function MicIcon() {
-  return (
-    <svg
-      className="w-5 h-5"
-      fill="none"
-      stroke="currentColor"
-      viewBox="0 0 24 24"
-    >
-      <path
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        strokeWidth={2}
-        d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z"
-      />
-    </svg>
-  );
-}
-
-function StopIcon() {
-  return (
-    <svg
-      className="w-5 h-5"
-      fill="none"
-      stroke="currentColor"
-      viewBox="0 0 24 24"
-    >
-      <path
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        strokeWidth={2}
-        d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
-      />
-      <path
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        strokeWidth={2}
-        d="M9 10a1 1 0 011-1h4a1 1 0 011 1v4a1 1 0 01-1 1h-4a1 1 0 01-1-1v-4z"
-      />
-    </svg>
-  );
-}
