@@ -28,9 +28,9 @@ export function InterviewPage() {
       ?.replace(/\*\*/g, "") || "Coding Problem";
 
   return (
-    <div className="h-screen w-screen flex bg-zinc-950">
+    <div className="h-screen w-screen flex bg-[var(--bg-primary)] p-4 gap-4">
       {/* Left: Problem Description */}
-      <div className="w-80 h-full border-r border-zinc-700">
+      <div className="w-[380px] h-full shrink-0 rounded-xl border border-[var(--border-color)] shadow-[var(--shadow-lg)] overflow-hidden bg-[var(--card-bg)]">
         <ProblemDescription
           title={problemTitle}
           description={DEFAULT_INTERVIEW.question}
@@ -38,12 +38,12 @@ export function InterviewPage() {
       </div>
 
       {/* Center: Code Editor */}
-      <div className="flex-1 h-full">
+      <div className="flex-1 h-full min-w-0">
         <CodeEditor value={code} onChange={(value) => setCode(value ?? "")} />
       </div>
 
       {/* Right: Interview Panel */}
-      <div className="w-80 h-full border-l border-zinc-700">
+      <div className="w-[380px] h-full shrink-0 rounded-xl border border-[var(--border-color)] shadow-[var(--shadow-lg)] overflow-hidden bg-[var(--card-bg)]">
         <InterviewPanel
           isConnected={isConnected}
           isCapturing={isCapturing}

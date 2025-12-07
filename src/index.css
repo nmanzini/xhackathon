@@ -201,8 +201,8 @@ h1 {
   transition: opacity 0.2s;
 }
 
-.monaco-scrollable-element:hover > .scrollbar,
-.monaco-scrollable-element:active > .scrollbar {
+.monaco-scrollable-element:not(.no-scroll):hover > .scrollbar,
+.monaco-scrollable-element:not(.no-scroll):active > .scrollbar {
   opacity: 1;
 }
 
@@ -211,6 +211,6 @@ h1 {
 }
 
 /* Hide cursor in read-only code viewer */
-.monaco-editor .cursors-layer {
+.readonly-editor .monaco-editor .cursors-layer {
   display: none !important;
 }
