@@ -1,5 +1,6 @@
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { InterviewPage } from "./pages/InterviewPage";
+import { InterviewListPage } from "./pages/InterviewListPage";
 import { ReviewPage } from "./pages/ReviewPage";
 
 function App() {
@@ -7,7 +8,8 @@ function App() {
     <BrowserRouter>
       <Routes>
         <Route path="/" element={<InterviewPage />} />
-        <Route path="/review" element={<ReviewPage />} />
+        <Route path="/reviews" element={<InterviewListPage />} />
+        <Route path="/review/:id" element={<ReviewPage />} />
       </Routes>
     </BrowserRouter>
   );

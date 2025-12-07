@@ -1,80 +1,23 @@
 import { useState, useRef, useEffect } from "react";
+import { useParams, Link } from "react-router-dom";
 import { TranscriptView } from "../components/TranscriptView";
 import { ReviewCodeViewer } from "../components/ReviewCodeViewer";
-import type { InterviewOutput } from "../types/index";
-
-const mockInterviewData: InterviewOutput = {
-  input: {
-    instruction: "Conduct a technical interview",
-    question: "Implement a function to find the longest palindromic substring",
-    userInfo: { name: "Alex Chen" },
-    helpLevel: "medium",
-  },
-  compiledSystemPrompt: "You are an AI interviewer...",
-  transcript: [
-    {
-      role: "llm",
-      message: "Hello Alex! Ready to start the interview?",
-      code: "// Welcome to the Voice AI Interview\n// Write your solution below\n\nfunction solution() {\n  // Your code here\n}\n",
-      timestamp: Date.now() - 600000,
-    },
-    {
-      role: "user",
-      message: "Yes, I'm ready!",
-      code: "// Welcome to the Voice AI Interview\n// Write your solution below\n\nfunction solution() {\n  // Your code here\n}\n",
-      timestamp: Date.now() - 590000,
-    },
-    {
-      role: "llm",
-      message:
-        "Great! Your task is to implement a function that finds the longest palindromic substring in a given string.",
-      code: "// Welcome to the Voice AI Interview\n// Write your solution below\n\nfunction solution() {\n  // Your code here\n}\n",
-      timestamp: Date.now() - 580000,
-    },
-    {
-      role: "user",
-      message:
-        "Okay, let me think about this. I'll start by defining the function.",
-      code: "function findLongestPalindrome(s) {\n  // TODO: implement\n}\n",
-      timestamp: Date.now() - 570000,
-    },
-    {
-      role: "llm",
-      message: "Good start! Can you explain your approach?",
-      code: "function findLongestPalindrome(s) {\n  // TODO: implement\n}\n",
-      timestamp: Date.now() - 560000,
-    },
-    {
-      role: "user",
-      message:
-        "I'm thinking of using the expand around center approach. For each position, I'll expand outward while characters match.",
-      code: "function findLongestPalindrome(s) {\n  if (s.length < 2) return s;\n  \n  let longest = '';\n  \n  for (let i = 0; i < s.length; i++) {\n    // Check odd length palindromes\n    // Check even length palindromes\n  }\n  \n  return longest;\n}\n",
-      timestamp: Date.now() - 550000,
-    },
-    {
-      role: "llm",
-      message: "Excellent approach! Now let's implement the expansion logic.",
-      code: "function findLongestPalindrome(s) {\n  if (s.length < 2) return s;\n  \n  let longest = '';\n  \n  for (let i = 0; i < s.length; i++) {\n    // Check odd length palindromes\n    // Check even length palindromes\n  }\n  \n  return longest;\n}\n",
-      timestamp: Date.now() - 540000,
-    },
-    {
-      role: "user",
-      message: "I'll create a helper function to expand around a center.",
-      code: "function findLongestPalindrome(s) {\n  if (s.length < 2) return s;\n  \n  let longest = '';\n  \n  function expandAroundCenter(left, right) {\n    while (left >= 0 && right < s.length && s[left] === s[right]) {\n      left--;\n      right++;\n    }\n    return s.slice(left + 1, right);\n  }\n  \n  for (let i = 0; i < s.length; i++) {\n    const odd = expandAroundCenter(i, i);\n    const even = expandAroundCenter(i, i + 1);\n    const longer = odd.length > even.length ? odd : even;\n    if (longer.length > longest.length) {\n      longest = longer;\n    }\n  }\n  \n  return longest;\n}\n",
-      timestamp: Date.now() - 530000,
-    },
-  ],
-};
+import { mockInterviews } from "../data/mockInterviews";
 
 export function ReviewPage() {
+  const { id } = useParams<{ id: string }>();
   const [timelinePosition, setTimelinePosition] = useState(0);
+  const [direction, setDirection] = useState<"forward" | "backward">("forward");
+  const [showSettings, setShowSettings] = useState(false);
   const scrollContainerRef = useRef<HTMLDivElement>(null);
-  const totalSteps = mockInterviewData.transcript.length;
   const lastPositionRef = useRef<number>(0);
+
+  const interview = mockInterviews.find((i) => i.id === id);
+  const totalSteps = interview?.transcript.length ?? 0;
 
   useEffect(() => {
     const container = scrollContainerRef.current;
-    if (!container) {
+    if (!container || !interview) {
       return;
     }
 
@@ -86,25 +29,39 @@ export function ReviewPage() {
         Math.round(scrollPercent * (totalSteps - 1)),
         totalSteps - 1
       );
-      setTimelinePosition(newPosition);
+      if (newPosition !== lastPositionRef.current) {
+        setDirection(
+          newPosition > lastPositionRef.current ? "forward" : "backward"
+        );
+        lastPositionRef.current = newPosition;
+        setTimelinePosition(newPosition);
+      }
     };
 
     container.addEventListener("scroll", handleScroll, { passive: true });
     return () => container.removeEventListener("scroll", handleScroll);
-  }, [totalSteps]);
+  }, [totalSteps, interview]);
 
-  const visibleTranscript = mockInterviewData.transcript.slice(
-    0,
-    timelinePosition + 1
-  );
-  const currentCode = mockInterviewData.transcript[timelinePosition].code;
+  if (!interview) {
+    return (
+      <div className="h-screen w-screen flex items-center justify-center bg-[var(--bg-primary)]">
+        <div className="text-center">
+          <div className="text-xl text-[var(--text-primary)] mb-4">
+            Interview not found
+          </div>
+          <Link
+            to="/reviews"
+            className="text-[var(--primary-color)] hover:underline"
+          >
+            Back to interviews
+          </Link>
+        </div>
+      </div>
+    );
+  }
 
-  const direction =
-    timelinePosition > lastPositionRef.current ? "forward" : "backward";
-
-  useEffect(() => {
-    lastPositionRef.current = timelinePosition;
-  }, [timelinePosition]);
+  const visibleTranscript = interview.transcript.slice(0, timelinePosition + 1);
+  const currentCode = interview.transcript[timelinePosition].code;
 
   return (
     <div
@@ -117,8 +74,29 @@ export function ReviewPage() {
         className="fixed top-0 left-8 bottom-0 right-0 flex"
         style={{ direction: "ltr" }}
       >
-        <div className="w-1/2 h-full border-r border-[var(--border-color)]">
-          <TranscriptView entries={visibleTranscript} />
+        <div className="w-1/2 h-full border-r border-[var(--border-color)] flex flex-col">
+          <div className="p-4 border-b border-[var(--border-color)] flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <Link
+                to="/reviews"
+                className="text-[var(--text-secondary)] hover:text-[var(--primary-color)] transition-colors"
+              >
+                ← Back
+              </Link>
+              <span className="text-[var(--text-primary)] font-medium">
+                {interview.input.userInfo.name}
+              </span>
+            </div>
+            <button
+              onClick={() => setShowSettings(true)}
+              className="px-3 py-1.5 text-sm rounded-md border border-[var(--border-color)] bg-[var(--card-bg)] text-[var(--text-secondary)] hover:bg-[var(--card-bg-hover)] hover:text-[var(--text-primary)] transition-all duration-200"
+            >
+              Settings
+            </button>
+          </div>
+          <div className="flex-1 overflow-hidden">
+            <TranscriptView entries={visibleTranscript} />
+          </div>
         </div>
         <div className="w-1/2 h-full bg-[var(--bg-primary)]">
           <ReviewCodeViewer code={currentCode} direction={direction} />
@@ -127,6 +105,73 @@ export function ReviewPage() {
 
       {/* Spacer to create scroll height */}
       <div style={{ height: "calc(100vh + 200px)" }} />
+
+      {showSettings && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center p-4"
+          style={{ direction: "ltr" }}
+        >
+          <div
+            className="absolute inset-0 bg-black/50"
+            onClick={() => setShowSettings(false)}
+          />
+          <div className="relative bg-[var(--card-bg)] rounded-xl border border-[var(--border-color)] shadow-[var(--shadow-xl)] w-full max-w-2xl max-h-[85vh] flex flex-col">
+            <div className="flex items-center justify-between p-6 border-b border-[var(--border-color)] shrink-0">
+              <h2 className="text-lg font-semibold text-[var(--text-primary)]">
+                Interview Settings
+              </h2>
+              <button
+                onClick={() => setShowSettings(false)}
+                className="text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition-colors text-xl leading-none"
+              >
+                ×
+              </button>
+            </div>
+            <div className="p-6 overflow-y-auto space-y-6">
+              <div className="flex gap-6">
+                <div className="flex-1">
+                  <div className="text-xs uppercase tracking-wide font-medium text-[var(--text-secondary)] mb-2">
+                    Candidate
+                  </div>
+                  <div className="text-[var(--text-primary)] font-medium">
+                    {interview.input.userInfo.name}
+                  </div>
+                </div>
+                <div className="flex-1">
+                  <div className="text-xs uppercase tracking-wide font-medium text-[var(--text-secondary)] mb-2">
+                    Help Level
+                  </div>
+                  <span
+                    className="inline-block px-3 py-1 rounded-full text-sm font-medium capitalize"
+                    style={{
+                      backgroundColor: "var(--slider-bg-start)",
+                      color: "var(--primary-color)",
+                    }}
+                  >
+                    {interview.input.helpLevel}
+                  </span>
+                </div>
+              </div>
+              <div>
+                <div className="text-xs uppercase tracking-wide font-medium text-[var(--text-secondary)] mb-2">
+                  Question
+                </div>
+                <div className="text-[var(--text-primary)] text-sm leading-relaxed border border-[var(--border-color)] rounded-lg p-4 max-h-40 overflow-y-auto bg-[var(--bg-primary)]">
+                  {interview.input.question}
+                </div>
+              </div>
+              <div>
+                <div className="text-xs uppercase tracking-wide font-medium text-[var(--text-secondary)] mb-2">
+                  Instruction
+                </div>
+                <div className="text-[var(--text-primary)] text-sm leading-relaxed border border-[var(--border-color)] rounded-lg p-4 max-h-48 overflow-y-auto bg-[var(--bg-primary)]">
+                  {interview.input.instruction}
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
