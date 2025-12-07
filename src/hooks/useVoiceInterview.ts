@@ -30,7 +30,7 @@ const TOOLS = [
   {
     type: "function",
     name: "get_code",
-    description: "Get the candidate's current code from the editor AND the current test cases. Call this whenever you want to see what they've written, when they ask you to look at their code, or before adding new test cases to understand the test format.",
+    description: "REQUIRED: You CANNOT see the code editor - you are BLIND to it! Call this tool to fetch the candidate's current code. You MUST call this IMMEDIATELY whenever you say 'let me look/check/see your code' or when candidate mentions writing code. Without calling this, you have NO idea what they wrote.",
     parameters: {
       type: "object",
       properties: {},
