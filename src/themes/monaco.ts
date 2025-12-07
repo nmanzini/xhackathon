@@ -54,3 +54,4 @@ export const darkTheme: editor.IStandaloneThemeData = {
 
 export const LIGHT_THEME_NAME = "app-light";
 export const DARK_THEME_NAME = "app-dark";
+
