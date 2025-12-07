@@ -29,13 +29,22 @@ export interface InterviewInput {
   testCases: TestCase[];
 }
 
-export type TranscriptEntryRole = "llm" | "user";
+export type TranscriptEntryRole = "llm" | "user" | "test_run";
 
 export interface TranscriptEntry {
   role: TranscriptEntryRole;
   message: string;
   code: string;
   timestamp: number;
+  // For test run entries
+  testResults?: {
+    id: string;
+    input: any[];
+    expected: any;
+    actual?: any;
+    passed: boolean;
+    error?: string;
+  }[];
 }
 
 export interface InterviewOutput {

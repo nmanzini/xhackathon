@@ -155,6 +155,8 @@ export function InterviewPanel({
                     return { bg: "var(--code-bg)", border: "var(--warning-color)", color: "var(--warning-color)" };
                   case "tool":
                     return { bg: "rgba(139, 92, 246, 0.1)", border: "rgb(139, 92, 246)", color: "rgb(139, 92, 246)" };
+                  case "test_run":
+                    return { bg: "rgba(16, 185, 129, 0.1)", border: "rgb(16, 185, 129)", color: "rgb(16, 185, 129)" };
                   default:
                     return { bg: "var(--card-bg)", border: "var(--invite-color)", color: "var(--invite-color)" };
                 }
@@ -165,6 +167,7 @@ export function InterviewPanel({
                   case "assistant": return "🤖 Interviewer";
                   case "code": return "📄 Code Sent";
                   case "tool": return `🔧 ${entry.toolName === "run_tests" ? "Tests Run" : entry.toolName === "add_test_case" ? "Test Added" : entry.toolName || "Tool"}`;
+                  case "test_run": return "🧪 Test Run";
                   default: return "👤 You";
                 }
               };
@@ -193,6 +196,31 @@ export function InterviewPanel({
                     <pre className="text-xs font-mono overflow-auto max-h-40 whitespace-pre-wrap p-2 rounded text-[var(--text-secondary)] bg-[var(--bg-primary)]">
                       {entry.content}
                     </pre>
+                  ) : entry.role === "test_run" && entry.testResults ? (
+                    <div className="space-y-1">
+                      <p className="text-sm text-[var(--text-primary)] mb-2">
+                        {entry.content}
+                      </p>
+                      <div className="space-y-1 text-xs">
+                        {entry.testResults.map((result, idx) => (
+                          <div 
+                            key={result.id}
+                            className={`p-2 rounded ${result.passed ? 'bg-emerald-500/10' : 'bg-red-500/10'}`}
+                          >
+                            <div className="flex items-center gap-2">
+                              <span>{result.passed ? '✓' : '✗'}</span>
+                              <span>Test {idx + 1}</span>
+                            </div>
+                            {!result.passed && (
+                              <div className="mt-1 ml-5 text-[var(--text-secondary)]">
+                                <div>Expected: {JSON.stringify(result.expected)}</div>
+                                <div>Got: {result.actual !== undefined ? JSON.stringify(result.actual) : result.error}</div>
+                              </div>
+                            )}
+                          </div>
+                        ))}
+                      </div>
+                    </div>
                   ) : (
                     <p className="text-sm text-[var(--text-primary)]">
                       {entry.content}
