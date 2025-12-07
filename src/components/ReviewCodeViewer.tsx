@@ -191,7 +191,7 @@ export function ReviewCodeViewer({
   return (
     <div className="h-full p-6">
       <div className="h-full rounded-xl overflow-hidden shadow-[var(--shadow-xl)] border border-[var(--border-color)]">
-        <div className="h-full pl-3 bg-[var(--code-bg)]">
+        <div className="h-full pl-3 bg-[var(--code-bg)] readonly-editor">
           <Editor
             height="100%"
             defaultLanguage="typescript"
