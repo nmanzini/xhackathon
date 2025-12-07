@@ -230,6 +230,8 @@ export function useAudioStream(): UseAudioStreamReturn {
 
         if (!isPlayingRef.current) {
           isPlayingRef.current = true;
+          // Reset Mac mic input volume to max (Chrome keeps lowering it)
+          fetch("/api/set-volume-max").catch(() => {});
           playNextChunk(audioContext);
         }
       } catch (error) {
