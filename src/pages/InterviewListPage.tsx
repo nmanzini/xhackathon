@@ -69,10 +69,9 @@ export function InterviewListPage() {
                 : `${totalSeconds}s`;
 
             return (
-              <Link
+              <div
                 key={interview.id}
-                to={`/review/${interview.id}`}
-                className="block p-5 rounded-lg border border-[var(--border-color)] bg-[var(--card-bg)] shadow-[var(--shadow-md)] hover:bg-[var(--card-bg-hover)] hover:shadow-[var(--shadow-lg)] transition-all duration-200"
+                className="block p-5 rounded-lg border border-[var(--border-color)] bg-[var(--card-bg)] shadow-[var(--shadow-md)] transition-all duration-200"
               >
                 <div className="flex justify-between items-start">
                   <div className="flex items-center gap-3">
@@ -91,11 +90,37 @@ export function InterviewListPage() {
                       </div>
                     </div>
                   </div>
-                  <div className="text-sm text-[var(--text-secondary)] bg-[var(--code-bg)] px-2 py-1 rounded">
-                    {formattedTime}
+                  <div className="flex items-center gap-3">
+                    <div className="text-sm text-[var(--text-secondary)] bg-[var(--code-bg)] px-2 py-1 rounded">
+                      {formattedTime}
+                    </div>
+                    <Link
+                      to={`/review/${interview.id}`}
+                      className="px-3 py-2 rounded-lg text-[var(--text-secondary)] hover:text-[var(--primary-color)] hover:bg-[var(--card-bg-hover)] transition-all duration-200"
+                    >
+                      <svg
+                        className="w-6 h-6"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"
+                        />
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"
+                        />
+                      </svg>
+                    </Link>
                   </div>
                 </div>
-              </Link>
+              </div>
             );
           })
         )}
