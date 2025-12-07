@@ -1,5 +1,4 @@
-import { useState } from "react";
-import { TimelineSlider } from "../components/TimelineSlider";
+import { useState, useRef, useEffect } from "react";
 import { TranscriptView } from "../components/TranscriptView";
 import { ReviewCodeViewer } from "../components/ReviewCodeViewer";
 import type { InterviewOutput } from "../types/index";
@@ -69,6 +68,27 @@ const mockInterviewData: InterviewOutput = {
 
 export function ReviewPage() {
   const [timelinePosition, setTimelinePosition] = useState(0);
+  const scrollContainerRef = useRef<HTMLDivElement>(null);
+  const totalSteps = mockInterviewData.transcript.length;
+
+  useEffect(() => {
+    const container = scrollContainerRef.current;
+    if (!container) return;
+
+    const handleScroll = () => {
+      const scrollTop = container.scrollTop;
+      const maxScroll = container.scrollHeight - container.clientHeight;
+      const scrollPercent = maxScroll > 0 ? scrollTop / maxScroll : 0;
+      const newPosition = Math.min(
+        Math.round(scrollPercent * (totalSteps - 1)),
+        totalSteps - 1
+      );
+      setTimelinePosition(newPosition);
+    };
+
+    container.addEventListener("scroll", handleScroll, { passive: true });
+    return () => container.removeEventListener("scroll", handleScroll);
+  }, [totalSteps]);
 
   const visibleTranscript = mockInterviewData.transcript.slice(
     0,
@@ -77,13 +97,16 @@ export function ReviewPage() {
   const currentCode = mockInterviewData.transcript[timelinePosition].code;
 
   return (
-    <div className="h-screen w-screen flex flex-col bg-[var(--bg-primary)] transition-colors duration-300">
-      <TimelineSlider
-        max={mockInterviewData.transcript.length - 1}
-        value={timelinePosition}
-        onChange={setTimelinePosition}
-      />
-      <div className="flex-1 flex overflow-hidden">
+    <div
+      ref={scrollContainerRef}
+      className="review-scroll-container h-screen w-screen overflow-y-scroll bg-[var(--bg-primary)]"
+      style={{ direction: "rtl" }}
+    >
+      {/* Fixed content panels - left-5 leaves room for scrollbar */}
+      <div
+        className="fixed top-0 left-5 bottom-0 right-0 flex"
+        style={{ direction: "ltr" }}
+      >
         <div className="w-1/2 h-full border-r border-[var(--border-color)]">
           <TranscriptView entries={visibleTranscript} />
         </div>
@@ -91,6 +114,9 @@ export function ReviewPage() {
           <ReviewCodeViewer code={currentCode} />
         </div>
       </div>
+
+      {/* Spacer to create scroll height */}
+      <div style={{ height: "calc(100vh + 200px)" }} />
     </div>
   );
 }
