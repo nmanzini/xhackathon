@@ -112,15 +112,15 @@ export function ReviewPage() {
       className="review-scroll-container h-screen w-screen overflow-y-scroll bg-[var(--bg-primary)]"
       style={{ direction: "rtl" }}
     >
-      {/* Fixed content panels - left-5 leaves room for scrollbar */}
+      {/* Fixed content panels - left-8 leaves room for scrollbar */}
       <div
-        className="fixed top-0 left-5 bottom-0 right-0 flex"
+        className="fixed top-0 left-8 bottom-0 right-0 flex"
         style={{ direction: "ltr" }}
       >
         <div className="w-1/2 h-full border-r border-[var(--border-color)]">
           <TranscriptView entries={visibleTranscript} />
         </div>
-        <div className="w-1/2 h-full bg-[var(--code-bg)]">
+        <div className="w-1/2 h-full bg-[var(--bg-primary)]">
           <ReviewCodeViewer code={currentCode} direction={direction} />
         </div>
       </div>

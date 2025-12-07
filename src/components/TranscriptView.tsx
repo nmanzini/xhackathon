@@ -25,13 +25,13 @@ export function TranscriptView({ entries }: TranscriptViewProps) {
       ref={containerRef}
       className="h-full overflow-y-auto bg-[var(--bg-primary)] p-4 transition-colors duration-300"
     >
-      <div className="space-y-4">
+      <div className="space-y-5">
         {entries.map((entry, index) => {
           const isNew = index === entries.length - 1 && index > 0;
           return (
             <div
               key={index}
-              className={`p-3 rounded-lg border shadow-sm transition-all duration-300 ${
+              className={`p-5 rounded-lg border shadow-[var(--shadow-md)] transition-all duration-300 ${
                 entry.role === "llm"
                   ? "bg-[var(--card-bg-hover)] border-[var(--primary-color)]"
                   : "bg-[var(--card-bg)] border-[var(--border-color)]"
@@ -46,11 +46,11 @@ export function TranscriptView({ entries }: TranscriptViewProps) {
                 animation: isNew ? "slideIn 0.4s ease-out" : "none",
               }}
             >
-              <div className="text-xs font-mono text-[var(--text-secondary)] mb-1">
+              <div className="text-sm font-mono text-[var(--text-secondary)] mb-1">
                 {entry.role === "llm" ? "AI Interviewer" : "Candidate"} •{" "}
                 {new Date(entry.timestamp).toLocaleTimeString()}
               </div>
-              <div className="text-sm text-[var(--text-primary)]">
+              <div className="text-base text-[var(--text-primary)]">
                 {entry.message}
               </div>
             </div>
