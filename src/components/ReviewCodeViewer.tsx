@@ -1,4 +1,4 @@
-import Editor, { loader, type Monaco } from "@monaco-editor/react";
+import Editor, { loader } from "@monaco-editor/react";
 import { useRef, useEffect } from "react";
 import type { editor } from "monaco-editor";
 import { useSystemTheme } from "../hooks";
@@ -16,7 +16,6 @@ loader.init().then((monaco) => {
 
 interface ReviewCodeViewerProps {
   code: string;
-  previousCode?: string;
   direction?: "forward" | "backward";
 }
 
@@ -26,85 +25,101 @@ function computeLineDiff(
 ): { added: number[] } {
   const oldLines = oldCode.split("\n");
   const newLines = newCode.split("\n");
-  const added: number[] = [];
+  const m = oldLines.length;
+  const n = newLines.length;
 
-  const maxLen = Math.max(oldLines.length, newLines.length);
+  const C = Array.from({ length: m + 1 }, () => Array(n + 1).fill(0));
 
-  for (let i = 0; i < maxLen; i++) {
-    const oldLine = oldLines[i] ?? "";
-    const newLine = newLines[i] ?? "";
-
-    if (oldLine !== newLine && newLine.trim() !== "") {
-      added.push(i + 1);
+  for (let i = 1; i <= m; i++) {
+    for (let j = 1; j <= n; j++) {
+      if (oldLines[i - 1] === newLines[j - 1]) {
+        C[i][j] = C[i - 1][j - 1] + 1;
+      } else {
+        C[i][j] = Math.max(C[i][j - 1], C[i - 1][j]);
+      }
     }
   }
 
-  return { added };
+  const added: number[] = [];
+  let i = m;
+  let j = n;
+
+  while (j > 0) {
+    if (i > 0 && oldLines[i - 1] === newLines[j - 1]) {
+      i--;
+      j--;
+    } else if (i > 0 && C[i][j - 1] < C[i - 1][j]) {
+      i--;
+    } else {
+      added.push(j);
+      j--;
+    }
+  }
+
+  return { added: added.reverse() };
 }
 
 export function ReviewCodeViewer({
   code,
-  previousCode,
   direction = "forward",
 }: ReviewCodeViewerProps) {
   const systemTheme = useSystemTheme();
   const themeName = systemTheme === "dark" ? DARK_THEME_NAME : LIGHT_THEME_NAME;
   const editorRef = useRef<editor.IStandaloneCodeEditor | null>(null);
   const decorationsRef = useRef<string[]>([]);
+  const lastAppliedCodeRef = useRef<string | null>(null);
+  const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const flashedLinesRef = useRef<Set<string>>(new Set());
+  const lastDirectionRef = useRef<"forward" | "backward">(direction);
 
-  const handleEditorMount = (
-    editor: editor.IStandaloneCodeEditor,
-    monaco: Monaco
-  ) => {
+  if (direction !== lastDirectionRef.current) {
+    flashedLinesRef.current.clear();
+    lastDirectionRef.current = direction;
+  }
+
+  const handleEditorMount = (editor: editor.IStandaloneCodeEditor) => {
     editorRef.current = editor;
+    lastAppliedCodeRef.current = code;
   };
 
   useEffect(() => {
-    const timestamp = Date.now();
-    console.log(`[${timestamp}] Effect triggered`, {
-      hasEditor: !!editorRef.current,
-      hasPreviousCode: !!previousCode,
-      codeLength: code.length,
-      previousCodeLength: previousCode?.length,
-      direction,
-    });
-
     const editor = editorRef.current;
-    if (!editor || !previousCode || previousCode === code) {
-      console.log(`[${timestamp}] Early return:`, {
-        noEditor: !editor,
-        noPreviousCode: !previousCode,
-        sameCode: previousCode === code,
-      });
+    if (!editor) {
       return;
     }
 
-    const oldDecorationCount = decorationsRef.current.length;
+    const previousCode = lastAppliedCodeRef.current;
+    if (!previousCode || previousCode === code) {
+      lastAppliedCodeRef.current = code;
+      return;
+    }
+
+    if (timeoutRef.current) {
+      clearTimeout(timeoutRef.current);
+      timeoutRef.current = null;
+    }
+
     decorationsRef.current = editor.deltaDecorations(
       decorationsRef.current,
       []
     );
-    console.log(
-      `[${timestamp}] Cleared ${oldDecorationCount} existing decorations`
-    );
 
     const { added } = computeLineDiff(previousCode, code);
+    const codeLines = code.split("\n");
     const className =
       direction === "forward" ? "diff-added-line" : "diff-removed-line";
 
-    const codeLines = code.split("\n");
-    const lineContents = added.map(
-      (lineNum) => `${lineNum}: ${codeLines[lineNum - 1]}`
-    );
-
-    console.log(`[${timestamp}] Diff result:`, {
-      addedLines: added,
-      addedLineCount: added.length,
-      className,
-      lineContents,
+    const linesToFlash = added.filter((lineNumber) => {
+      const lineContent = codeLines[lineNumber - 1] ?? "";
+      return !flashedLinesRef.current.has(lineContent);
     });
 
-    const decorations = added.map((lineNumber) => ({
+    linesToFlash.forEach((lineNumber) => {
+      const lineContent = codeLines[lineNumber - 1] ?? "";
+      flashedLinesRef.current.add(lineContent);
+    });
+
+    const decorations = linesToFlash.map((lineNumber) => ({
       range: {
         startLineNumber: lineNumber,
         startColumn: 1,
@@ -118,27 +133,25 @@ export function ReviewCodeViewer({
     }));
 
     decorationsRef.current = editor.deltaDecorations([], decorations);
-    console.log(
-      `[${timestamp}] Applied ${decorations.length} decorations, IDs:`,
-      decorationsRef.current
-    );
+    lastAppliedCodeRef.current = code;
 
-    const timeout = setTimeout(() => {
-      console.log(`[${timestamp}] Timeout fired, clearing decorations`);
+    timeoutRef.current = setTimeout(() => {
       if (editorRef.current) {
         decorationsRef.current = editorRef.current.deltaDecorations(
           decorationsRef.current,
           []
         );
-        console.log(`[${timestamp}] Decorations cleared`);
       }
+      timeoutRef.current = null;
     }, 1000);
 
     return () => {
-      console.log(`[${timestamp}] Cleanup called, clearing timeout`);
-      clearTimeout(timeout);
+      if (timeoutRef.current) {
+        clearTimeout(timeoutRef.current);
+        timeoutRef.current = null;
+      }
     };
-  }, [code, previousCode, direction]);
+  }, [code, direction]);
 
   return (
     <div className="h-full">
