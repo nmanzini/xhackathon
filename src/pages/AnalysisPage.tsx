@@ -624,8 +624,8 @@ export function AnalysisPage() {
             </div>
             <div className="p-8 overflow-y-auto space-y-8">
               <div className="grid grid-cols-2 gap-6">
-                <div className="p-5 rounded-xl bg-[var(--bg-primary)] border border-[var(--border-color)] hover:border-[var(--primary-color)]/30 transition-colors duration-200">
-                  <div className="flex items-center gap-3 mb-3">
+                <div className="px-5 py-4 rounded-xl bg-[var(--bg-primary)] border border-[var(--border-color)] hover:border-[var(--primary-color)]/30 transition-colors duration-200 flex items-center justify-between">
+                  <div className="flex items-center gap-3">
                     <div className="w-8 h-8 rounded-lg bg-[var(--primary-color)]/10 flex items-center justify-center">
                       <svg
                         className="w-4 h-4 text-[var(--primary-color)]"
@@ -645,12 +645,12 @@ export function AnalysisPage() {
                       Candidate
                     </div>
                   </div>
-                  <div className="text-lg text-[var(--text-primary)] font-medium">
+                  <div className="text-sm text-[var(--text-primary)] font-medium">
                     {interview.input.userInfo.name}
                   </div>
                 </div>
-                <div className="p-5 rounded-xl bg-[var(--bg-primary)] border border-[var(--border-color)] hover:border-[var(--primary-color)]/30 transition-colors duration-200">
-                  <div className="flex items-center gap-3 mb-3">
+                <div className="px-5 py-4 rounded-xl bg-[var(--bg-primary)] border border-[var(--border-color)] hover:border-[var(--primary-color)]/30 transition-colors duration-200 flex items-center justify-between">
+                  <div className="flex items-center gap-3">
                     <div className="w-8 h-8 rounded-lg bg-[var(--primary-color)]/10 flex items-center justify-center">
                       <svg
                         className="w-4 h-4 text-[var(--primary-color)]"
@@ -703,7 +703,7 @@ export function AnalysisPage() {
                     Question
                   </div>
                 </div>
-                <div className="text-[var(--text-primary)] text-sm leading-relaxed max-h-40 overflow-y-auto">
+                <div className="text-sm text-[var(--text-primary)] font-medium leading-relaxed max-h-40 overflow-y-auto">
                   {interview.input.question}
                 </div>
               </div>
@@ -729,7 +729,7 @@ export function AnalysisPage() {
                     Instruction
                   </div>
                 </div>
-                <div className="text-[var(--text-primary)] text-sm leading-relaxed max-h-32 overflow-y-auto">
+                <div className="text-sm text-[var(--text-primary)] font-medium leading-relaxed max-h-32 overflow-y-auto">
                   {interview.input.instruction}
                 </div>
               </div>
@@ -755,7 +755,7 @@ export function AnalysisPage() {
                     Expected Solution
                   </div>
                 </div>
-                <pre className="text-[var(--text-primary)] text-sm leading-relaxed max-h-56 overflow-y-auto bg-[var(--code-bg)] rounded-lg p-4 font-[var(--font-monospace)]">
+                <pre className="text-sm text-[var(--text-primary)] font-medium leading-relaxed max-h-56 overflow-y-auto bg-[var(--code-bg)] rounded-lg p-4 font-[var(--font-monospace)]">
                   {interview.input.expectedSolution}
                 </pre>
               </div>
