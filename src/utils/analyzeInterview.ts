@@ -42,7 +42,7 @@ const analysisSchema = {
       items: {
         type: "object",
         properties: {
-          transcriptIndex: { type: "integer" },
+          minute: { type: "integer" },
           scores: {
             type: "object",
             properties: {
@@ -53,7 +53,7 @@ const analysisSchema = {
             required: ["communication", "thoughtProcess", "overall"],
           },
         },
-        required: ["transcriptIndex", "scores"],
+        required: ["minute", "scores"],
       },
     },
   },
@@ -67,10 +67,19 @@ const analysisSchema = {
 };
 
 function buildAnalysisPrompt(interview: InterviewOutput): string {
+  const firstTimestamp = interview.transcript[0]?.timestamp || 0;
+  const lastTimestamp =
+    interview.transcript[interview.transcript.length - 1]?.timestamp || 0;
+  const durationMinutes = Math.ceil((lastTimestamp - firstTimestamp) / 60000);
+
   const transcriptText = interview.transcript
     .map((entry, index) => {
       const role = entry.role === "llm" ? "Interviewer" : "Candidate";
-      return `[${index}] ${role}: ${entry.message}\nCode at this point:\n\`\`\`\n${entry.code}\n\`\`\``;
+      const relativeMs = entry.timestamp - firstTimestamp;
+      const minutes = Math.floor(relativeMs / 60000);
+      const seconds = Math.floor((relativeMs % 60000) / 1000);
+      const timeStr = `${minutes}:${seconds.toString().padStart(2, "0")}`;
+      return `[${index}] [${timeStr}] ${role}: ${entry.message}\nCode at this point:\n\`\`\`\n${entry.code}\n\`\`\``;
     })
     .join("\n\n");
 
@@ -86,6 +95,8 @@ ${interview.input.expectedSolution}
 
 INTERVIEW TRANSCRIPT:
 ${transcriptText}
+
+INTERVIEW DURATION: ${durationMinutes} minutes (from 0:00 to ${durationMinutes}:00)
 
 SCORING CRITERIA (1-5 scale):
 - Communication (1-5): How clearly did the candidate explain their thinking? Did they ask clarifying questions? Did they communicate their approach before coding?
@@ -115,9 +126,7 @@ TASKS:
 
    If no actual solution hints were given, return an empty array.
 
-2. Track the candidate's performance throughout the interview with score snapshots at key moments. Scores should reflect how the candidate is doing AT THAT SPECIFIC MOMENT - scores can go up OR down as performance changes. For example, a candidate might start with strong thought process but lose it later, or have poor communication early but improve. Include approximately ${Math.ceil(
-    interview.transcript.length / 4
-  )} snapshots evenly distributed across the interview (roughly 1 snapshot per 4 transcript entries).
+2. Track the candidate's performance throughout the interview with score snapshots at each minute mark (0, 1, 2, ... ${durationMinutes}). Provide a snapshot for each minute of the interview. Scores should reflect how the candidate is doing AT THAT SPECIFIC MOMENT based on what has happened up to that minute - scores can go up OR down as performance changes. For example, a candidate might start with strong thought process but lose it later, or have poor communication early but improve.
 
 3. Provide final scores for communication, thought process, and overall.
 
@@ -185,14 +194,14 @@ export async function analyzeInterview(
     hints: analysis.hints,
     scoreProgression: analysis.scoreProgression.map(
       (snapshot: {
-        transcriptIndex: number;
+        minute: number;
         scores: {
           communication: number;
           thoughtProcess: number;
           overall: number;
         };
       }) => ({
-        transcriptIndex: snapshot.transcriptIndex,
+        minute: snapshot.minute,
         scores: {
           communication: snapshot.scores.communication as Score,
           thoughtProcess: snapshot.scores.thoughtProcess as Score,

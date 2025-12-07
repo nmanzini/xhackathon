@@ -310,17 +310,12 @@ export function AnalysisPage() {
   const firstTimestamp = interview.transcript[0]?.timestamp || 0;
 
   const chartData =
-    analysis?.scoreProgression.map((snapshot) => {
-      const entryTimestamp =
-        interview.transcript[snapshot.transcriptIndex]?.timestamp || 0;
-      const relativeMs = entryTimestamp - firstTimestamp;
-      return {
-        time: formatRelativeTime(relativeMs),
-        timeMs: relativeMs,
-        Communication: snapshot.scores.communication,
-        "Thought Process": snapshot.scores.thoughtProcess,
-      };
-    }) || [];
+    analysis?.scoreProgression.map((snapshot) => ({
+      time: `${snapshot.minute}:00`,
+      timeMs: snapshot.minute * 60000,
+      Communication: snapshot.scores.communication,
+      "Thought Process": snapshot.scores.thoughtProcess,
+    })) || [];
 
   const hintTimes =
     analysis?.hints.map((h) => {
