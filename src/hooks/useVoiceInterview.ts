@@ -85,6 +85,7 @@ export function useVoiceInterview({
   getTestCases,
 }: UseVoiceInterviewOptions) {
   const [isConnected, setIsConnected] = useState(false);
+  const [hasDisconnected, setHasDisconnected] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const wsRef = useRef<WebSocket | null>(null);
@@ -422,6 +423,7 @@ export function useVoiceInterview({
       ws.onclose = (e) => {
         console.log("[Interview] Closed:", e.code);
         setIsConnected(false);
+        setHasDisconnected(true);
         if (e.code !== 1000) setError(`Closed: ${e.reason || e.code}`);
       };
 
@@ -459,6 +461,7 @@ export function useVoiceInterview({
 
   return {
     isConnected,
+    hasDisconnected,
     isCapturing,
     audioLevel,
     transcript,
