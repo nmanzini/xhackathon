@@ -2,6 +2,8 @@ import { useState, useRef, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { mockInterviews } from "../data/mockInterviews";
 import { analyzeInterview } from "../utils/analyzeInterview";
+import { compareInterviewsToNumber } from "../utils/compareInterviews";
+import { asyncMergeSort } from "../utils/asyncMergeSort";
 import type { InterviewAnalysis, InterviewOutput } from "../types";
 
 const API_KEY = import.meta.env.VITE_XAI_API_KEY || "";
@@ -57,6 +59,14 @@ const SCORE_OPTIONS = [
   { value: "unscored", label: "Unscored", color: null },
 ];
 
+type SortOrder = "date" | "rank" | "score";
+
+const SORT_OPTIONS: { value: SortOrder; label: string }[] = [
+  { value: "date", label: "Date Added" },
+  { value: "rank", label: "Rank" },
+  { value: "score", label: "Score" },
+];
+
 export function InterviewListPage() {
   const [search, setSearch] = useState("");
   const [scoreFilter, setScoreFilter] = useState<string>("all");
@@ -66,6 +76,9 @@ export function InterviewListPage() {
   >({});
   const [loadingIds, setLoadingIds] = useState<Set<string>>(new Set());
   const [isScoring, setIsScoring] = useState(false);
+  const [isRanking, setIsRanking] = useState(false);
+  const [rankedOrder, setRankedOrder] = useState<string[] | null>(null);
+  const [sortOrder, setSortOrder] = useState<SortOrder>("date");
   const navigate = useNavigate();
   const dropdownRef = useRef<HTMLDivElement>(null);
 
@@ -120,6 +133,38 @@ export function InterviewListPage() {
     }
   }
 
+  async function handleRankCandidates() {
+    console.log("[Ranking] Starting ranking process...");
+    console.log(
+      `[Ranking] API Key present: ${!!API_KEY}, length: ${API_KEY.length}`
+    );
+    console.log(`[Ranking] Total interviews to rank: ${mockInterviews.length}`);
+    setIsRanking(true);
+    try {
+      const sorted = await asyncMergeSort(
+        mockInterviews,
+        (a: InterviewOutput, b: InterviewOutput) => {
+          console.log(
+            `[Ranking] Comparing: ${a.input.userInfo.name} vs ${b.input.userInfo.name}`
+          );
+          return compareInterviewsToNumber(a, b, API_KEY);
+        }
+      );
+      console.log("[Ranking] Sorting complete!");
+      console.log(
+        "[Ranking] Final order:",
+        sorted.map((i) => i.input.userInfo.name)
+      );
+      setRankedOrder(sorted.map((interview) => interview.id));
+      setSortOrder("rank");
+    } catch (error) {
+      console.error("[Ranking] Failed:", error);
+    } finally {
+      setIsRanking(false);
+      console.log("[Ranking] Process finished");
+    }
+  }
+
   const filteredInterviews = mockInterviews.filter((interview) => {
     const matchesSearch = interview.input.userInfo.name
       .toLowerCase()
@@ -147,36 +192,81 @@ export function InterviewListPage() {
     return analysis.finalScores.overall >= minScore;
   });
 
+  const sortedInterviews = [...filteredInterviews].sort((a, b) => {
+    if (sortOrder === "rank" && rankedOrder) {
+      const aIndex = rankedOrder.indexOf(a.id);
+      const bIndex = rankedOrder.indexOf(b.id);
+      return aIndex - bIndex;
+    }
+    if (sortOrder === "score") {
+      const aScore = analysisResults[a.id]?.finalScores.overall ?? 0;
+      const bScore = analysisResults[b.id]?.finalScores.overall ?? 0;
+      return bScore - aScore;
+    }
+    const aTime = a.transcript[0]?.timestamp ?? 0;
+    const bTime = b.transcript[0]?.timestamp ?? 0;
+    return bTime - aTime;
+  });
+
+  const hasScores = Object.keys(analysisResults).length > 0;
+  const hasRanks = rankedOrder !== null;
+
   return (
     <div className="h-screen bg-[var(--bg-primary)] p-8 flex flex-col">
       <div className="flex items-center justify-between mb-6 shrink-0">
         <h1 className="text-4xl font-semibold text-[var(--text-primary)]">
           Interviews
         </h1>
-        <button
-          onClick={handleScoreAll}
-          disabled={isScoring}
-          className="px-6 py-3 rounded-xl border-2 border-[var(--primary-color)] bg-[var(--card-bg)] text-[var(--primary-color)] font-medium text-lg hover:bg-[var(--card-bg-hover)] transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-3 shadow-[var(--shadow-md)]"
-        >
-          {isScoring ? (
-            <div className="w-6 h-6 border-2 border-[var(--border-color)] border-t-[var(--primary-color)] rounded-full animate-spin" />
-          ) : (
-            <svg
-              className="w-5 h-5"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"
-              />
-            </svg>
-          )}
-          {isScoring ? "Scoring..." : "Score All Candidates"}
-        </button>
+        <div className="flex gap-3">
+          <button
+            onClick={handleScoreAll}
+            disabled={isScoring || isRanking}
+            className="px-6 py-3 rounded-xl border-2 border-[var(--primary-color)] bg-[var(--card-bg)] text-[var(--primary-color)] font-medium text-lg hover:bg-[var(--card-bg-hover)] transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-3 shadow-[var(--shadow-md)]"
+          >
+            {isScoring ? (
+              <div className="w-6 h-6 border-2 border-[var(--border-color)] border-t-[var(--primary-color)] rounded-full animate-spin" />
+            ) : (
+              <svg
+                className="w-5 h-5"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"
+                />
+              </svg>
+            )}
+            {isScoring ? "Scoring..." : "Score All Candidates"}
+          </button>
+          <button
+            onClick={handleRankCandidates}
+            disabled={isScoring || isRanking}
+            className="px-6 py-3 rounded-xl border-2 border-[var(--primary-color)] bg-[var(--card-bg)] text-[var(--primary-color)] font-medium text-lg hover:bg-[var(--card-bg-hover)] transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-3 shadow-[var(--shadow-md)]"
+          >
+            {isRanking ? (
+              <div className="w-6 h-6 border-2 border-[var(--border-color)] border-t-[var(--primary-color)] rounded-full animate-spin" />
+            ) : (
+              <svg
+                className="w-5 h-5"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M3 4h13M3 8h9m-9 4h6m4 0l4-4m0 0l4 4m-4-4v12"
+                />
+              </svg>
+            )}
+            {isRanking ? "Ranking..." : "Rank Candidates"}
+          </button>
+        </div>
       </div>
       <div className="flex gap-3 shrink-0 bg-[var(--bg-primary)] relative z-10">
         <div className="relative flex-1">
@@ -219,8 +309,9 @@ export function InterviewListPage() {
                 d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z"
               />
             </svg>
-            <span className="min-w-[80px] text-left">
-              {SCORE_OPTIONS.find((o) => o.value === scoreFilter)?.label}
+            <span className="min-w-[120px] text-left">
+              {SCORE_OPTIONS.find((o) => o.value === scoreFilter)?.label} /{" "}
+              {SORT_OPTIONS.find((o) => o.value === sortOrder)?.label}
             </span>
             <svg
               className={`w-4 h-4 text-[var(--text-disabled)] transition-transform ${
@@ -239,49 +330,79 @@ export function InterviewListPage() {
             </svg>
           </button>
           {dropdownOpen && (
-            <div className="absolute top-full left-0 right-0 mt-1 rounded-xl border border-[var(--border-color)] bg-[var(--card-bg)] shadow-[var(--shadow-lg)] z-50 overflow-hidden">
-              {SCORE_OPTIONS.map((option, index) => (
-                <button
-                  key={option.value}
-                  onClick={() => {
-                    setScoreFilter(option.value);
-                    setDropdownOpen(false);
-                  }}
-                  className={`w-full px-4 py-2 text-left flex items-center gap-2 hover:bg-[var(--card-bg-hover)] transition-colors ${
-                    scoreFilter === option.value
-                      ? "bg-[var(--card-bg-hover)]"
-                      : ""
-                  } ${index === 0 ? "rounded-t-xl" : ""} ${
-                    index === SCORE_OPTIONS.length - 1 ? "rounded-b-xl" : ""
-                  }`}
-                >
-                  {option.color ? (
-                    <span
-                      className="w-3 h-3 rounded-full"
-                      style={{ backgroundColor: option.color }}
-                    />
-                  ) : (
-                    <span className="w-3 h-3 rounded-full bg-[var(--text-disabled)] opacity-30" />
-                  )}
-                  <span
-                    style={{ color: option.color || "var(--text-primary)" }}
-                  >
-                    {option.label}
-                  </span>
-                </button>
-              ))}
+            <div className="absolute top-full right-0 mt-1 rounded-xl border border-[var(--border-color)] bg-[var(--card-bg)] shadow-[var(--shadow-lg)] z-50 overflow-hidden">
+              <div className="px-3 pt-3 pb-1">
+                <div className="text-xs font-semibold text-[var(--text-disabled)] uppercase tracking-wider mb-2">
+                  Filter
+                </div>
+                <div className="flex flex-wrap gap-2">
+                  {SCORE_OPTIONS.map((option) => (
+                    <button
+                      key={option.value}
+                      onClick={() => {
+                        setScoreFilter(option.value);
+                      }}
+                      className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full border text-sm transition-all ${
+                        scoreFilter === option.value
+                          ? "border-[var(--primary-color)] bg-[var(--primary-color)]/10 text-[var(--primary-color)]"
+                          : "border-[var(--border-color)] text-[var(--text-secondary)] hover:border-[var(--text-disabled)] hover:text-[var(--text-primary)]"
+                      }`}
+                    >
+                      {option.color && (
+                        <span
+                          className="w-2 h-2 rounded-full shrink-0"
+                          style={{ backgroundColor: option.color }}
+                        />
+                      )}
+                      <span>{option.label}</span>
+                    </button>
+                  ))}
+                </div>
+              </div>
+              <div className="px-3 pt-3 pb-3 border-t border-[var(--border-color)] mt-2">
+                <div className="text-xs font-semibold text-[var(--text-disabled)] uppercase tracking-wider mb-2">
+                  Sort
+                </div>
+                <div className="flex flex-wrap gap-2">
+                  {SORT_OPTIONS.map((option) => {
+                    const isDisabled =
+                      (option.value === "rank" && !hasRanks) ||
+                      (option.value === "score" && !hasScores);
+                    return (
+                      <button
+                        key={option.value}
+                        onClick={() => {
+                          if (!isDisabled) {
+                            setSortOrder(option.value);
+                          }
+                        }}
+                        disabled={isDisabled}
+                        className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full border text-sm transition-all ${
+                          isDisabled
+                            ? "opacity-40 cursor-not-allowed border-[var(--border-color)] text-[var(--text-disabled)]"
+                            : sortOrder === option.value
+                            ? "border-[var(--primary-color)] bg-[var(--primary-color)]/10 text-[var(--primary-color)]"
+                            : "border-[var(--border-color)] text-[var(--text-secondary)] hover:border-[var(--text-disabled)] hover:text-[var(--text-primary)]"
+                        }`}
+                      >
+                        <span>{option.label}</span>
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
             </div>
           )}
         </div>
       </div>
       <div className="flex-1 overflow-y-auto border-b border-[var(--border-color)] pt-4 pb-4">
         <div className="grid gap-4">
-          {filteredInterviews.length === 0 ? (
+          {sortedInterviews.length === 0 ? (
             <div className="text-center py-12 text-[var(--text-secondary)]">
               No interviews found matching "{search}"
             </div>
           ) : (
-            filteredInterviews.map((interview) => {
+            sortedInterviews.map((interview) => {
               const startTime = interview.transcript[0]?.timestamp;
               const formattedDate = startTime
                 ? new Date(startTime).toLocaleString("en-US", {
@@ -319,6 +440,11 @@ export function InterviewListPage() {
                 >
                   <div className="flex justify-between items-start">
                     <div className="flex items-center gap-3">
+                      {rankedOrder && (
+                        <div className="w-8 h-8 rounded-lg flex items-center justify-center text-sm font-bold border-2 border-[var(--primary-color)] text-[var(--primary-color)] bg-[var(--primary-color)]/10">
+                          #{rankedOrder.indexOf(interview.id) + 1}
+                        </div>
+                      )}
                       <div
                         className="w-10 h-10 rounded-full flex items-center justify-center text-white font-medium"
                         style={{ backgroundColor: "var(--primary-color)" }}
