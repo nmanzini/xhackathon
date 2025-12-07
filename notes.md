@@ -31,7 +31,7 @@ can be avaluated by anotehr process.
 
 ## improvemnts
 - is thre a long silence? speak
-- the usre speaks without question? silence
+- the user speaks without question? silence
   - this uses a quick llm
 
 ## small features
