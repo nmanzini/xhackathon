@@ -219,14 +219,14 @@ export function InterviewListPage() {
     <div className="h-screen bg-[var(--bg-primary)] p-8 flex flex-col">
       <div className="flex items-center justify-between mb-6 shrink-0">
         <h1 className="text-3xl font-semibold text-[#2d2d2d]">Candidates</h1>
-        <div className="flex gap-3">
+        <div className="flex gap-2">
           <button
             onClick={handleScoreAll}
             disabled={isScoring || isRanking}
-            className="px-6 py-3 rounded-xl border-2 border-[var(--primary-color)] bg-[var(--card-bg)] text-[var(--primary-color)] font-medium text-lg hover:bg-[var(--card-bg-hover)] transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-3 shadow-[var(--shadow-md)]"
+            className="px-6 py-4 rounded-xl border border-[var(--primary-color)] bg-[var(--card-bg)] text-[var(--primary-color)] font-medium text-lg hover:bg-[var(--card-bg-hover)] transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-3 shadow-[var(--shadow-md)]"
           >
             {isScoring ? (
-              <div className="w-6 h-6 border-2 border-[var(--border-color)] border-t-[var(--primary-color)] rounded-full animate-spin" />
+              <div className="w-5 h-5 border-2 border-[var(--border-color)] border-t-[var(--primary-color)] rounded-full animate-spin" />
             ) : (
               <svg
                 className="w-5 h-5"
@@ -242,15 +242,15 @@ export function InterviewListPage() {
                 />
               </svg>
             )}
-            {isScoring ? "Scoring..." : "Score All Candidates"}
+            {isScoring ? "Scoring..." : "Score All"}
           </button>
           <button
             onClick={handleRankCandidates}
             disabled={isScoring || isRanking}
-            className="px-6 py-3 rounded-xl border-2 border-[var(--primary-color)] bg-[var(--card-bg)] text-[var(--primary-color)] font-medium text-lg hover:bg-[var(--card-bg-hover)] transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-3 shadow-[var(--shadow-md)]"
+            className="px-6 py-4 rounded-xl border border-[var(--primary-color)] bg-[var(--card-bg)] text-[var(--primary-color)] font-medium text-lg hover:bg-[var(--card-bg-hover)] transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-3 shadow-[var(--shadow-md)]"
           >
             {isRanking ? (
-              <div className="w-6 h-6 border-2 border-[var(--border-color)] border-t-[var(--primary-color)] rounded-full animate-spin" />
+              <div className="w-5 h-5 border-2 border-[var(--border-color)] border-t-[var(--primary-color)] rounded-full animate-spin" />
             ) : (
               <svg
                 className="w-5 h-5"
@@ -266,7 +266,26 @@ export function InterviewListPage() {
                 />
               </svg>
             )}
-            {isRanking ? "Ranking..." : "Rank Candidates"}
+            {isRanking ? "Ranking..." : "Rank"}
+          </button>
+          <button
+            onClick={() => navigate("/interview/new")}
+            className="px-6 py-4 rounded-xl bg-[var(--primary-color)] text-white font-medium text-lg hover:opacity-90 transition-all duration-200 flex items-center gap-3 shadow-[var(--shadow-md)]"
+          >
+            <svg
+              className="w-5 h-5"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M12 4v16m8-8H4"
+              />
+            </svg>
+            Interview
           </button>
         </div>
       </div>

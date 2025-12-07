@@ -1,4 +1,4 @@
-import { useRef, useState, useCallback } from "react";
+import { useRef, useState, useCallback, useMemo, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import {
   CodeEditor,
@@ -7,11 +7,15 @@ import {
   TestPanel,
 } from "../components";
 import { useVoiceInterview, useTestRunner } from "../hooks";
-import { DEFAULT_INTERVIEW } from "../config/interview";
+import { PREDEFINED_QUESTIONS } from "../config/interview";
 import { createInterviewOutput } from "../utils/saveInterview";
 import { evaluateCandidate } from "../utils/evaluateCandidate";
-import { interviewsStore } from "../stores/interviewStore";
-import type { Language } from "../types";
+import {
+  interviewsStore,
+  interviewSetupStore,
+  customQuestionsStore,
+} from "../stores";
+import type { Language, InterviewInput } from "../types";
 
 // Resizable divider component
 function ResizeHandle({
@@ -40,8 +44,40 @@ function ResizeHandle({
 
 export function InterviewPage() {
   const navigate = useNavigate();
+  const setup = interviewSetupStore.get();
+
+  const interviewInput = useMemo<InterviewInput | null>(() => {
+    if (!setup) {
+      return null;
+    }
+    const customQuestions = customQuestionsStore.get();
+    const question =
+      PREDEFINED_QUESTIONS.find((q) => q.id === setup.questionId) ||
+      customQuestions.find((q) => q.id === setup.questionId);
+    if (!question) {
+      return null;
+    }
+    return {
+      instruction: setup.customInstruction,
+      question: question.question,
+      userInfo: { name: setup.candidateName },
+      helpLevel: setup.helpLevel,
+      expectedSolution: question.expectedSolution,
+      functionName: question.functionName,
+      starterCode: question.starterCode,
+      testCases: question.testCases,
+      finalTestCases: question.finalTestCases,
+    };
+  }, [setup]);
+
+  useEffect(() => {
+    if (!interviewInput) {
+      navigate("/interview/new");
+    }
+  }, [interviewInput, navigate]);
+
   const [language, setLanguage] = useState<Language>("python");
-  const [code, setCode] = useState(DEFAULT_INTERVIEW.starterCode.python);
+  const [code, setCode] = useState(interviewInput?.starterCode.python ?? "");
 
   // Panel sizes
   const [leftWidth, setLeftWidth] = useState(380);
@@ -104,10 +140,12 @@ export function InterviewPage() {
     [leftWidth, rightWidth, testHeight]
   );
 
-  // Handle language change
   const handleLanguageChange = (newLang: Language) => {
+    if (!interviewInput) {
+      return;
+    }
     setLanguage(newLang);
-    setCode(DEFAULT_INTERVIEW.starterCode[newLang]);
+    setCode(interviewInput.starterCode[newLang]);
   };
 
   const {
@@ -122,8 +160,8 @@ export function InterviewPage() {
   } = useTestRunner(
     codeRef,
     language,
-    DEFAULT_INTERVIEW.functionName,
-    DEFAULT_INTERVIEW.testCases
+    interviewInput?.functionName ?? "",
+    interviewInput?.testCases ?? []
   );
 
   const {
@@ -137,7 +175,7 @@ export function InterviewPage() {
     sendTestResults,
     getFinalTranscript,
   } = useVoiceInterview({
-    interviewInput: DEFAULT_INTERVIEW,
+    interviewInput: interviewInput!,
     codeRef,
     language,
     onRunTests: runAll,
@@ -145,29 +183,29 @@ export function InterviewPage() {
     getTestCases: () => testCases,
   });
 
-  // Handle ending interview - save and navigate to reviews
   const handleEndInterview = useCallback(async () => {
-    // Stop the voice connection
+    if (!interviewInput) {
+      return;
+    }
+
     stopInterview();
 
-    // Create the interview output (runs final hidden tests)
     const interviewOutput = await createInterviewOutput(
-      DEFAULT_INTERVIEW,
+      interviewInput,
       getFinalTranscript(),
       codeRef.current,
       language
     );
 
-    // Save to store
     const currentInterviews = interviewsStore.get();
     interviewsStore.set([interviewOutput, ...currentInterviews]);
 
-    // Kick off scoring and ranking in parallel (fire and forget)
     evaluateCandidate(interviewOutput);
 
-    // Navigate to the analysis page for this interview
+    interviewSetupStore.set(null);
+
     navigate(`/interviews/${interviewOutput.id}/analysis`);
-  }, [stopInterview, getFinalTranscript, language, navigate]);
+  }, [interviewInput, stopInterview, getFinalTranscript, language, navigate]);
 
   // Wrapper to run tests and send results to AI
   const runAllAndNotifyAI = useCallback(async () => {
@@ -190,14 +228,17 @@ export function InterviewPage() {
     [runOne, results, sendTestResults, testCases]
   );
 
-  // Extract problem title from the question (first line with **)
   const problemTitle =
-    DEFAULT_INTERVIEW.question
+    interviewInput?.question
       .split("\n")
       .find((line) => line.startsWith("**"))
       ?.replace(/\*\*/g, "") || "Coding Problem";
 
   const passCount = results.filter((r) => r.passed).length;
+
+  if (!interviewInput) {
+    return null;
+  }
 
   return (
     <div className="h-screen w-screen flex bg-[var(--bg-primary)] p-4 gap-0">
@@ -224,7 +265,7 @@ export function InterviewPage() {
           <div className="flex-1 overflow-auto">
             <ProblemDescription
               title={problemTitle}
-              description={DEFAULT_INTERVIEW.question}
+              description={interviewInput.question}
             />
           </div>
         )}
