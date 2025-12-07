@@ -1354,8 +1354,17 @@ function reverseList(head) {
     finalTestResults: [], // Mock interviews don't have final test results
     transcript: (() => {
       const baseTimestamp = Date.now() - 10800000;
-      const entries: { role: "llm" | "user"; message: string; code: string; timestamp: number }[] = [];
-      const messages: { role: "llm" | "user"; message: string; code: string }[] = [
+      const entries: {
+        role: "llm" | "user";
+        message: string;
+        code: string;
+        timestamp: number;
+      }[] = [];
+      const messages: {
+        role: "llm" | "user";
+        message: string;
+        code: string;
+      }[] = [
         {
           role: "llm",
           message:
@@ -1480,6 +1489,119 @@ function reverseList(head) {
       }
 
       return entries;
+    })(),
+  },
+  {
+    id: "pattern-demo",
+    input: {
+      instruction: "Conduct a technical interview",
+      question: "Implement a function to reverse a linked list",
+      userInfo: { name: "Pattern Demo" },
+      helpLevel: "medium",
+      expectedSolution: `function reverseLinkedList(head) {
+  let prev = null;
+  let current = head;
+  while (current) {
+    const next = current.next;
+    current.next = prev;
+    prev = current;
+    current = next;
+  }
+  return prev;
+}`,
+      functionName: "reverseLinkedList",
+      starterCode: defaultStarterCode,
+      testCases: [],
+      finalTestCases: [],
+    },
+    compiledSystemPrompt: "You are an AI interviewer...",
+    finalTestResults: [],
+    transcript: (() => {
+      const baseTimestamp = Date.now() - 360000;
+      return [
+        {
+          role: "llm" as const,
+          message:
+            "Hello! Today we'll be working on reversing a linked list. Are you ready to begin?",
+          code: "function reverseLinkedList(head) {\n  // Your solution here\n}\n",
+          timestamp: baseTimestamp,
+        },
+        {
+          role: "user" as const,
+          message:
+            "Yes, I'm ready! Before I start coding, let me think through the problem. A linked list reversal means we need to change all the next pointers to point backwards. I'll need to track the previous node, current node, and save the next node before changing pointers.",
+          code: "function reverseLinkedList(head) {\n  // Your solution here\n}\n",
+          timestamp: baseTimestamp + 30000,
+        },
+        {
+          role: "llm" as const,
+          message:
+            "Excellent explanation! You've clearly identified the key insight. Please go ahead and implement it.",
+          code: "function reverseLinkedList(head) {\n  // Your solution here\n}\n",
+          timestamp: baseTimestamp + 60000,
+        },
+        {
+          role: "user" as const,
+          message:
+            "I'll use three pointers. The prev pointer starts as null since the new tail should point to nothing. Current starts at head. In each iteration, I'll save current.next, then reverse the pointer, then move both prev and current forward.",
+          code: "function reverseLinkedList(head) {\n  let prev = null;\n  let current = head;\n  // Will iterate through the list\n}\n",
+          timestamp: baseTimestamp + 90000,
+        },
+        {
+          role: "llm" as const,
+          message:
+            "Great start! Your approach is correct. Continue with the iteration logic.",
+          code: "function reverseLinkedList(head) {\n  let prev = null;\n  let current = head;\n  // Will iterate through the list\n}\n",
+          timestamp: baseTimestamp + 120000,
+        },
+        {
+          role: "user" as const,
+          message: "...",
+          code: "function reverseLinkedList(head) {\n  let prev = null;\n  let current = head;\n  while (current) {\n    current.next = prev;\n  }\n}\n",
+          timestamp: baseTimestamp + 180000,
+        },
+        {
+          role: "llm" as const,
+          message:
+            "I see you're working on the while loop. Can you explain what you're doing?",
+          code: "function reverseLinkedList(head) {\n  let prev = null;\n  let current = head;\n  while (current) {\n    current.next = prev;\n  }\n}\n",
+          timestamp: baseTimestamp + 210000,
+        },
+        {
+          role: "user" as const,
+          message: "Um... hold on...",
+          code: "function reverseLinkedList(head) {\n  let prev = null;\n  let current = head;\n  while (current) {\n    current.next = prev;\n    current = current.next;\n  }\n}\n",
+          timestamp: baseTimestamp + 240000,
+        },
+        {
+          role: "llm" as const,
+          message:
+            "I notice there might be an issue with your code. Think about what happens to current.next after you reassign it.",
+          code: "function reverseLinkedList(head) {\n  let prev = null;\n  let current = head;\n  while (current) {\n    current.next = prev;\n    current = current.next;\n  }\n}\n",
+          timestamp: baseTimestamp + 270000,
+        },
+        {
+          role: "user" as const,
+          message:
+            "Oh wait, I see the problem now! I'm overwriting current.next before I save it, so I lose the reference to the rest of the list. Let me fix this. I need to save the next node first, then reverse the pointer, then advance both prev and current.",
+          code: "function reverseLinkedList(head) {\n  let prev = null;\n  let current = head;\n  while (current) {\n    const next = current.next;\n    current.next = prev;\n    prev = current;\n    current = next;\n  }\n}\n",
+          timestamp: baseTimestamp + 300000,
+        },
+        {
+          role: "llm" as const,
+          message:
+            "Excellent recovery! Can you walk me through what happens at each step?",
+          code: "function reverseLinkedList(head) {\n  let prev = null;\n  let current = head;\n  while (current) {\n    const next = current.next;\n    current.next = prev;\n    prev = current;\n    current = next;\n  }\n}\n",
+          timestamp: baseTimestamp + 330000,
+        },
+        {
+          role: "user" as const,
+          message:
+            "Sure! For each node: first I save the next pointer so I don't lose it. Then I reverse current's pointer to point at prev. Then I move prev forward to current, and current forward to the saved next. When current becomes null, prev is pointing at the new head. Oh, I need to return prev!",
+          code: "function reverseLinkedList(head) {\n  let prev = null;\n  let current = head;\n  while (current) {\n    const next = current.next;\n    current.next = prev;\n    prev = current;\n    current = next;\n  }\n  return prev;\n}\n",
+          timestamp: baseTimestamp + 360000,
+        },
+      ];
     })(),
   },
 ];
