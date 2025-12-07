@@ -194,3 +194,23 @@ h1 {
 .diff-removed-line {
   animation: flashRed 1s ease-out forwards;
 }
+
+/* Hide Monaco editor scrollbars when not needed */
+.monaco-scrollable-element > .scrollbar {
+  opacity: 0;
+  transition: opacity 0.2s;
+}
+
+.monaco-scrollable-element:hover > .scrollbar,
+.monaco-scrollable-element:active > .scrollbar {
+  opacity: 1;
+}
+
+.monaco-scrollable-element.no-scroll > .scrollbar {
+  display: none;
+}
+
+/* Hide cursor in read-only code viewer */
+.monaco-editor .cursors-layer {
+  display: none !important;
+}

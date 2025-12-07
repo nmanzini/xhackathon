@@ -80,6 +80,26 @@ export function ReviewCodeViewer({
   const handleEditorMount = (editor: editor.IStandaloneCodeEditor) => {
     editorRef.current = editor;
     lastAppliedCodeRef.current = code;
+
+    const updateScrollbarVisibility = () => {
+      const scrollHeight = editor.getScrollHeight();
+      const layoutInfo = editor.getLayoutInfo();
+      const scrollableElement = editor
+        .getDomNode()
+        ?.querySelector(".monaco-scrollable-element") as HTMLElement;
+
+      if (scrollableElement) {
+        if (scrollHeight <= layoutInfo.height) {
+          scrollableElement.classList.add("no-scroll");
+        } else {
+          scrollableElement.classList.remove("no-scroll");
+        }
+      }
+    };
+
+    setTimeout(updateScrollbarVisibility, 100);
+    editor.onDidChangeModelContent(updateScrollbarVisibility);
+    editor.onDidLayoutChange(updateScrollbarVisibility);
   };
 
   useEffect(() => {
@@ -156,20 +176,37 @@ export function ReviewCodeViewer({
   return (
     <div className="h-full p-6">
       <div className="h-full rounded-xl overflow-hidden shadow-[var(--shadow-xl)] border border-[var(--border-color)]">
-        <Editor
-          height="100%"
-          defaultLanguage="typescript"
-          value={code}
-          theme={themeName}
-          onMount={handleEditorMount}
-          options={{
-            readOnly: true,
-            minimap: { enabled: false },
-            fontSize: 14,
-            lineNumbers: "on",
-            scrollBeyondLastLine: false,
-          }}
-        />
+        <div className="h-full pl-3 bg-[var(--code-bg)]">
+          <Editor
+            height="100%"
+            defaultLanguage="typescript"
+            value={code}
+            theme={themeName}
+            onMount={handleEditorMount}
+            options={{
+              readOnly: true,
+              domReadOnly: true,
+              minimap: { enabled: false },
+              fontSize: 14,
+              lineNumbers: "on",
+              scrollBeyondLastLine: false,
+              padding: { top: 16, bottom: 16 },
+              folding: false,
+              glyphMargin: false,
+              lineDecorationsWidth: 16,
+              lineNumbersMinChars: 3,
+              scrollbar: {
+                vertical: "auto",
+                horizontal: "auto",
+                verticalScrollbarSize: 10,
+                horizontalScrollbarSize: 10,
+              },
+              cursorBlinking: "solid",
+              hideCursorInOverviewRuler: true,
+              renderLineHighlight: "none",
+            }}
+          />
+        </div>
       </div>
     </div>
   );
