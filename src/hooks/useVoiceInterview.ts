@@ -5,20 +5,32 @@
  * FLOW:
  * 1. User speaks → Server VAD detects end → committed
  * 2. Server transcribes → conversation.item.added (user transcript)
- * 3. We inject code as user message
- * 4. We call response.create → AI responds
+ * 3. AI responds, can call get_code tool if it wants to see the code
+ * 4. We respond to tool calls with current code
  */
 
 import { useCallback, useRef, useState } from "react";
 import { useAudioStream } from "./useAudioStream";
 import { useTranscript } from "./useTranscript";
-import { buildSystemPrompt, buildCodeContextMessage } from "../utils/prompt";
+import { buildSystemPrompt } from "../utils/prompt";
 import type { InterviewInput } from "../types";
 import type { Message } from "../types/messages";
 
 const XAI_REALTIME_URL = "wss://api.x.ai/v1/realtime";
 const XAI_API_KEY = import.meta.env.VITE_XAI_API_KEY || "";
 const VOICE = "ash";
+
+// Tool definition for getting current code
+const GET_CODE_TOOL = {
+  type: "function",
+  name: "get_code",
+  description: "Get the candidate's current code from the editor. Call this whenever you want to see what they've written or when they ask you to look at their code.",
+  parameters: {
+    type: "object",
+    properties: {},
+    required: [],
+  },
+};
 
 export function useVoiceInterview(
   interviewInput: InterviewInput,
@@ -36,7 +48,7 @@ export function useVoiceInterview(
 
   const {
     transcript,
-    addUserMessage,
+    addOrUpdateUserMessage,
     updateAssistantMessage,
     addCodeSent,
     clear: clearTranscript,
@@ -50,10 +62,10 @@ export function useVoiceInterview(
     }
   }, []);
 
-  // Configure session with system prompt and VAD
+  // Configure session with system prompt, VAD, and tools
   const configureSession = useCallback(
     (sampleRate: number) => {
-      console.log("[Interview] Configuring session...");
+      console.log("[Interview] Configuring session with tools...");
       send({
         type: "session.update",
         session: {
@@ -64,10 +76,39 @@ export function useVoiceInterview(
             output: { format: { type: "audio/pcm", rate: sampleRate } },
           },
           turn_detection: { type: "server_vad" },
+          tools: [GET_CODE_TOOL],
         },
       });
     },
     [interviewInput, send]
+  );
+
+  // Handle tool call - respond with current code
+  const handleToolCall = useCallback(
+    (callId: string, toolName: string) => {
+      if (toolName === "get_code") {
+        const code = codeRef.current;
+        console.log("[Interview] Tool call: get_code");
+        console.log("[Interview] Returning code:", code.substring(0, 100) + "...");
+
+        // Add to UI transcript so user sees when AI checks code
+        addCodeSent(code);
+
+        // Send tool response
+        send({
+          type: "conversation.item.create",
+          item: {
+            type: "function_call_output",
+            call_id: callId,
+            output: code || "(empty - no code written yet)",
+          },
+        });
+
+        // Continue the response
+        send({ type: "response.create" });
+      }
+    },
+    [codeRef, send, addCodeSent]
   );
 
   // Send initial greeting to start interview
@@ -84,31 +125,6 @@ export function useVoiceInterview(
     });
     send({ type: "response.create" });
   }, [send]);
-
-  // Inject code and trigger AI response
-  const injectCodeAndRespond = useCallback(() => {
-    const code = codeRef.current;
-    const codeText = `[Here is my current code]\n${buildCodeContextMessage(code)}`;
-
-    console.log("[Interview] Injecting code and requesting response...");
-    console.log("[Interview] Code:", code.substring(0, 100) + "...");
-
-    // Add to UI transcript
-    addCodeSent(code);
-
-    // Send code to API
-    send({
-      type: "conversation.item.create",
-      item: {
-        type: "message",
-        role: "user",
-        content: [{ type: "input_text", text: codeText }],
-      },
-    });
-
-    // NOW trigger AI response
-    send({ type: "response.create" });
-  }, [codeRef, send, addCodeSent]);
 
   // === MESSAGE HANDLER ===
 
@@ -146,17 +162,23 @@ export function useVoiceInterview(
         stopPlayback();
       }
 
-      // User transcript received → THIS IS THE KEY MOMENT
-      // Now we have the full user message, so we inject code and trigger response
+      // Tool call from AI
+      if (type === "response.function_call_arguments.done" && "call_id" in message && "name" in message) {
+        const callId = message.call_id as string;
+        const toolName = message.name as string;
+        console.log("[Interview] Tool call:", toolName, "call_id:", callId);
+        handleToolCall(callId, toolName);
+      }
+
+      // User transcript received
       if (type === "conversation.item.added" && "item" in message) {
-        const item = message.item as { role?: string; content?: Array<{ type: string; transcript?: string; text?: string }> };
+        const item = message.item as { id?: string; role?: string; content?: Array<{ type: string; transcript?: string; text?: string }> };
         
-        // Debug: log what we received
         console.log("[Interview] conversation.item.added:", JSON.stringify(item, null, 2));
         
-        if (item?.role === "user" && item?.content) {
+        if (item?.role === "user" && item?.content && item?.id) {
           for (const content of item.content) {
-            // Only process AUDIO transcripts, not our injected text messages
+            // Only process AUDIO transcripts
             if (content.type !== "input_audio") {
               console.log("[Interview] Skipping non-audio content:", content.type);
               continue;
@@ -165,18 +187,14 @@ export function useVoiceInterview(
               console.log("[Interview] Skipping: no transcript");
               continue;
             }
-            if (content.transcript.includes("[Here is my current code]")) {
-              console.log("[Interview] Skipping: contains code marker");
-              continue;
-            }
             
             console.log("[Interview] User said:", content.transcript);
             
-            // Add user message to transcript
-            addUserMessage(content.transcript);
+            // Add or update user message (same item ID = update existing entry)
+            addOrUpdateUserMessage(item.id, content.transcript);
             
-            // NOW inject code and ask AI to respond
-            injectCodeAndRespond();
+            // Trigger AI response (AI will call get_code tool if it wants to see code)
+            send({ type: "response.create" });
             break;
           }
         }
@@ -189,7 +207,7 @@ export function useVoiceInterview(
         setError(err?.message || "An error occurred");
       }
     },
-    [configureSession, sendGreeting, playAudio, stopPlayback, updateAssistantMessage, addUserMessage, injectCodeAndRespond]
+    [configureSession, sendGreeting, playAudio, stopPlayback, updateAssistantMessage, addOrUpdateUserMessage, handleToolCall, send]
   );
 
   // === START / STOP ===
