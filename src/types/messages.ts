@@ -157,10 +157,3 @@ export type Message =
   | ErrorMessage
   | BaseMessage;
 
-// Transcript entry for UI
-export interface TranscriptEntry {
-  timestamp: string;
-  role: "user" | "assistant" | "code";
-  content: string;
-}
-

@@ -1,4 +1,4 @@
-import type { TranscriptEntry } from "../types/messages";
+import type { TranscriptEntry } from "../hooks/useTranscript";
 
 interface InterviewPanelProps {
   isConnected: boolean;
