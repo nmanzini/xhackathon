@@ -207,25 +207,25 @@ export function InterviewPage() {
     navigate(`/interviews/${interviewOutput.id}/analysis`);
   }, [interviewInput, stopInterview, getFinalTranscript, language, navigate]);
 
-  // Wrapper to run tests and send results to AI
+  // Wrapper to run tests and record in transcript (AI uses run_tests tool to see results)
   const runAllAndNotifyAI = useCallback(async () => {
     const results = await runAll();
-    // Send results to AI so it can comment on them
-    sendTestResults(results, testCases);
+    // Record in transcript for UI display (AI will use run_tests tool)
+    sendTestResults(results);
     return results;
-  }, [runAll, sendTestResults, testCases]);
+  }, [runAll, sendTestResults]);
 
-  // Wrapper for single test run - also notify AI
+  // Wrapper for single test run - also record in transcript
   const runOneAndNotifyAI = useCallback(
     async (testId: string) => {
       const result = await runOne(testId);
-      // After single test, send ALL results if we have any
+      // Record in transcript for UI display
       if (results.length > 0) {
-        sendTestResults(results, testCases);
+        sendTestResults(results);
       }
       return result;
     },
-    [runOne, results, sendTestResults, testCases]
+    [runOne, results, sendTestResults]
   );
 
   const problemTitle =

@@ -20,6 +20,11 @@ const XAI_REALTIME_URL = "wss://api.x.ai/v1/realtime";
 const XAI_API_KEY = import.meta.env.VITE_XAI_API_KEY || "";
 const VOICE = "ash";
 
+// Add spaces around special characters to help audio model tokenize code better
+function formatCodeForAudio(code: string): string {
+  return code.replace(/([[\]{}()])/g, ' $1 ').replace(/  +/g, ' ');
+}
+
 // Tool definitions - AI can get code, run tests, and add test cases
 const TOOLS = [
   {
@@ -87,8 +92,6 @@ export function useVoiceInterview({
   const assistantBuffer = useRef("");
   const pendingToolCalls = useRef<Array<{ callId: string; toolName: string; args: string }>>([]);
   const isProcessingTool = useRef(false);
-  // Initialize with starter code so we don't send it until user actually edits
-  const lastSentCode = useRef<string>(codeRef.current);
   
   // Use refs for values/callbacks that change frequently (e.g., when language changes)
   // This avoids stale closure issues in handleMessage
@@ -175,15 +178,15 @@ export function useVoiceInterview({
           const testCases = getTestCasesRef.current();
           console.log("[Interview] Returning code:", code.substring(0, 100) + "...");
           
-          // Add to UI transcript so user sees when AI checks code
-          addCodeSent(code);
+          // Add to UI transcript so user sees when AI checks code (show formatted version)
+          addCodeSent(formatCodeForAudio(code));
           
           // Include test cases to help AI understand format
           const testCasesList = testCases.map((tc, idx) => 
             `Test ${idx + 1}: input=${JSON.stringify(tc.input)}, expected=${JSON.stringify(tc.expected)}`
           ).join("\n");
           
-          output = `Language: ${languageRef.current}\n\nCode:\n${code || "(empty - no code written yet)"}\n\nExisting Test Cases:\n${testCasesList}`;
+          output = `Language: ${languageRef.current}\n\nCode:\n${code ? formatCodeForAudio(code) : "(empty - no code written yet)"}\n\nExisting Test Cases:\n${testCasesList}`;
         } 
         else if (toolName === "run_tests") {
           console.log("[Interview] AI running tests with current language setting...");
@@ -334,23 +337,8 @@ export function useVoiceInterview({
         console.log("[Interview] conversation.item.added:", JSON.stringify(item, null, 2));
         
         if (item?.role === "user" && item?.content && item?.id) {
-          let hadValidUserSpeech = false;
-          let hadGarbageTranscript = false;
-          
           for (const content of item.content) {
-            // Skip automatic code injections in transcript
-            if (content.type === "input_text" && content.text?.startsWith("[Current Code]")) {
-              console.log("[Interview] Skipping code injection from transcript");
-              continue;
-            }
-            
-            // Skip automatic test results in transcript
-            if (content.type === "input_text" && content.text?.startsWith("[Test Results]")) {
-              console.log("[Interview] Skipping test results injection from transcript");
-              continue;
-            }
-            
-            // Only process AUDIO transcripts
+            // Only process AUDIO transcripts (skip any text content)
             if (content.type !== "input_audio") {
               console.log("[Interview] Skipping non-audio content:", content.type);
               continue;
@@ -360,68 +348,14 @@ export function useVoiceInterview({
               continue;
             }
             
-            // Skip audio transcripts that contain code injection markers
-            // (API sometimes echoes our injections back as audio - a known quirk)
-            if (content.transcript.includes("[Current Code]") || 
-                content.transcript.includes("```python") ||
-                content.transcript.includes("```javascript") ||
-                content.transcript.includes("```typescript")) {
-              console.log("[Interview] Detected garbage transcript (code echo), will still trigger response");
-              hadGarbageTranscript = true;
-              continue;
-            }
-            
-            // Skip audio transcripts that contain test results echo
-            if (content.transcript.includes("[Test Results]")) {
-              console.log("[Interview] Detected garbage transcript (test results echo), will still trigger response");
-              hadGarbageTranscript = true;
-              continue;
-            }
-            
             console.log("[Interview] User said:", content.transcript);
-            hadValidUserSpeech = true;
             
             // Add or update user message (same item ID = update existing entry)
             addOrUpdateUserMessage(item.id, content.transcript);
             
-            // Inject current code as context ONLY if it has changed
-            // This ensures AI always has latest code without explicitly calling get_code
-            const currentCode = codeRef.current;
-            if (currentCode && currentCode.trim() !== "" && currentCode !== lastSentCode.current) {
-              console.log("[Interview] Code changed, injecting new code context");
-              lastSentCode.current = currentCode; // Update last sent code
-              
-              // Add visual indicator in transcript
-              addCodeSent(currentCode);
-              
-              // Send to AI (use languageRef to get current language, not stale closure)
-              send({
-                type: "conversation.item.create",
-                item: {
-                  type: "message",
-                  role: "user",
-                  content: [
-                    { 
-                      type: "input_text", 
-                      text: `[Current Code]\n\`\`\`${languageRef.current}\n${currentCode}\n\`\`\`` 
-                    }
-                  ],
-                },
-              });
-            } else if (currentCode === lastSentCode.current) {
-              console.log("[Interview] Code unchanged, skipping injection");
-            }
-            
-            // Trigger AI response (AI now has code context)
+            // Trigger AI response
             send({ type: "response.create" });
             break;
-          }
-          
-          // If we got garbage transcripts but no valid speech, DON'T trigger AI response
-          // This prevents the AI from repeating herself when she didn't hear the user
-          if (hadGarbageTranscript && !hadValidUserSpeech) {
-            console.log("[Interview] Only garbage transcripts received, ignoring (user speech not captured)");
-            // Don't call response.create - wait for valid user speech
           }
         }
       }
@@ -508,43 +442,14 @@ export function useVoiceInterview({
     isSessionConfigured.current = false;
   }, [stopCapture, stopPlayback]);
 
-  // Send test results to AI (called by user manually running tests)
+  // Record test results in transcript (for UI display only - AI uses run_tests tool)
   const sendTestResults = useCallback(
-    (results: TestResult[], testCases: TestCase[]) => {
-      if (!isConnected) return;
-
-      // Add test run to transcript with full details
+    (results: TestResult[]) => {
+      // Add test run to transcript for UI display
       addTestRun(results);
-
-      const passCount = results.filter(r => r.passed).length;
-      
-      const resultLines = results.map((r, idx) => {
-        const testCase = testCases[idx];
-        if (r.passed) return `Test ${idx + 1}: ✓ PASS`;
-        if (r.error) return `Test ${idx + 1}: ✗ ERROR - ${r.error}`;
-        return `Test ${idx + 1}: ✗ FAIL - expected ${JSON.stringify(testCase?.expected)}, got ${JSON.stringify(r.actual)}`;
-      });
-      
-      const message = `[Test Results]\n${passCount}/${results.length} tests passed\n\n${resultLines.join("\n")}`;
-      
-      console.log("[Interview] Sending test results to AI:", message);
-      
-      // Send as a user message so AI can see the results
-      send({
-        type: "conversation.item.create",
-        item: {
-          type: "message",
-          role: "user",
-          content: [{ type: "input_text", text: message }],
-        },
-      });
-      
-      // DON'T trigger AI response automatically
-      // This allows the user to speak and ask about the results naturally
-      // The AI will see the results when the user speaks next
-      console.log("[Interview] Test results added to context. User can now speak about them.");
+      // AI will use run_tests tool to see results - no auto-injection
     },
-    [isConnected, send, addTestRun]
+    [addTestRun]
   );
 
   // Get final transcript data for saving
