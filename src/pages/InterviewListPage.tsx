@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useRef, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { mockInterviews } from "../data/mockInterviews";
 import { analyzeInterview } from "../utils/analyzeInterview";
@@ -47,14 +47,41 @@ function getScoreColor(score: number): string {
   return "#ef4444";
 }
 
+const SCORE_OPTIONS = [
+  { value: "all", label: "All Scores", color: null },
+  { value: "5", label: "5", color: "#10b981" },
+  { value: "4", label: "4+", color: "#22c55e" },
+  { value: "3", label: "3+", color: "#eab308" },
+  { value: "2", label: "2+", color: "#f97316" },
+  { value: "1", label: "1+", color: "#ef4444" },
+  { value: "unscored", label: "Unscored", color: null },
+];
+
 export function InterviewListPage() {
   const [search, setSearch] = useState("");
+  const [scoreFilter, setScoreFilter] = useState<string>("all");
+  const [dropdownOpen, setDropdownOpen] = useState(false);
   const [analysisResults, setAnalysisResults] = useState<
     Record<string, InterviewAnalysis>
   >({});
   const [loadingIds, setLoadingIds] = useState<Set<string>>(new Set());
   const [isScoring, setIsScoring] = useState(false);
   const navigate = useNavigate();
+  const dropdownRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    function handleClickOutside(event: MouseEvent) {
+      if (
+        dropdownRef.current &&
+        !dropdownRef.current.contains(event.target as Node)
+      ) {
+        setDropdownOpen(false);
+      }
+    }
+
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
 
   async function handleScoreAll() {
     const uncachedInterviews = mockInterviews.filter(
@@ -93,9 +120,32 @@ export function InterviewListPage() {
     }
   }
 
-  const filteredInterviews = mockInterviews.filter((interview) =>
-    interview.input.userInfo.name.toLowerCase().includes(search.toLowerCase())
-  );
+  const filteredInterviews = mockInterviews.filter((interview) => {
+    const matchesSearch = interview.input.userInfo.name
+      .toLowerCase()
+      .includes(search.toLowerCase());
+
+    if (!matchesSearch) {
+      return false;
+    }
+
+    if (scoreFilter === "all") {
+      return true;
+    }
+
+    const analysis = analysisResults[interview.id];
+
+    if (scoreFilter === "unscored") {
+      return !analysis;
+    }
+
+    if (!analysis) {
+      return false;
+    }
+
+    const minScore = parseInt(scoreFilter);
+    return analysis.finalScores.overall >= minScore;
+  });
 
   return (
     <div className="h-screen bg-[var(--bg-primary)] p-8 flex flex-col">
@@ -128,30 +178,104 @@ export function InterviewListPage() {
           {isScoring ? "Scoring..." : "Score All Candidates"}
         </button>
       </div>
-      <div className="relative mb-4 shrink-0">
-        <input
-          type="text"
-          placeholder="Search interviews..."
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-          className="w-full px-5 py-4 pl-14 text-lg rounded-xl border border-[var(--border-color)] bg-[var(--input-bg)] text-[var(--text-primary)] placeholder-[var(--text-disabled)] focus:outline-none focus:border-[var(--primary-color)] shadow-[var(--shadow-sm)] transition-all"
-        />
-        <svg
-          className="absolute left-5 top-1/2 -translate-y-1/2 w-5 h-5 text-[var(--text-disabled)]"
-          fill="none"
-          stroke="currentColor"
-          viewBox="0 0 24 24"
-        >
-          <path
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            strokeWidth={2}
-            d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
+      <div className="flex gap-3 shrink-0 bg-[var(--bg-primary)] relative z-10">
+        <div className="relative flex-1">
+          <input
+            type="text"
+            placeholder="Search interviews..."
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            className="w-full px-5 py-4 pl-14 text-lg rounded-xl border border-[var(--border-color)] bg-[var(--input-bg)] text-[var(--text-primary)] placeholder-[var(--text-disabled)] focus:outline-none focus:border-[var(--primary-color)] shadow-[var(--shadow-sm)] transition-all"
           />
-        </svg>
+          <svg
+            className="absolute left-5 top-1/2 -translate-y-1/2 w-5 h-5 text-[var(--text-disabled)]"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth={2}
+              d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
+            />
+          </svg>
+        </div>
+        <div className="relative" ref={dropdownRef}>
+          <button
+            onClick={() => setDropdownOpen(!dropdownOpen)}
+            className="flex items-center gap-3 px-4 py-4 rounded-xl border border-[var(--border-color)] bg-[var(--input-bg)] text-[var(--text-primary)] focus:outline-none focus:border-[var(--primary-color)] shadow-[var(--shadow-sm)] transition-all hover:bg-[var(--card-bg-hover)]"
+          >
+            <svg
+              className="w-5 h-5 text-[var(--text-disabled)]"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z"
+              />
+            </svg>
+            <span className="min-w-[80px] text-left">
+              {SCORE_OPTIONS.find((o) => o.value === scoreFilter)?.label}
+            </span>
+            <svg
+              className={`w-4 h-4 text-[var(--text-disabled)] transition-transform ${
+                dropdownOpen ? "rotate-180" : ""
+              }`}
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M19 9l-7 7-7-7"
+              />
+            </svg>
+          </button>
+          {dropdownOpen && (
+            <div className="absolute top-full left-0 right-0 mt-1 rounded-xl border border-[var(--border-color)] bg-[var(--card-bg)] shadow-[var(--shadow-lg)] z-50 overflow-hidden">
+              {SCORE_OPTIONS.map((option, index) => (
+                <button
+                  key={option.value}
+                  onClick={() => {
+                    setScoreFilter(option.value);
+                    setDropdownOpen(false);
+                  }}
+                  className={`w-full px-4 py-2 text-left flex items-center gap-2 hover:bg-[var(--card-bg-hover)] transition-colors ${
+                    scoreFilter === option.value
+                      ? "bg-[var(--card-bg-hover)]"
+                      : ""
+                  } ${index === 0 ? "rounded-t-xl" : ""} ${
+                    index === SCORE_OPTIONS.length - 1 ? "rounded-b-xl" : ""
+                  }`}
+                >
+                  {option.color ? (
+                    <span
+                      className="w-3 h-3 rounded-full"
+                      style={{ backgroundColor: option.color }}
+                    />
+                  ) : (
+                    <span className="w-3 h-3 rounded-full bg-[var(--text-disabled)] opacity-30" />
+                  )}
+                  <span
+                    style={{ color: option.color || "var(--text-primary)" }}
+                  >
+                    {option.label}
+                  </span>
+                </button>
+              ))}
+            </div>
+          )}
+        </div>
       </div>
-      <div className="flex-1 overflow-y-auto">
-        <div className="grid gap-4 pb-4">
+      <div className="flex-1 overflow-y-auto border-b border-[var(--border-color)] pt-4 pb-4">
+        <div className="grid gap-4">
           {filteredInterviews.length === 0 ? (
             <div className="text-center py-12 text-[var(--text-secondary)]">
               No interviews found matching "{search}"
