@@ -440,11 +440,6 @@ export function InterviewListPage() {
                 >
                   <div className="flex justify-between items-start">
                     <div className="flex items-center gap-3">
-                      {rankedOrder && (
-                        <div className="w-8 h-8 rounded-lg flex items-center justify-center text-sm font-bold border-2 border-[var(--primary-color)] text-[var(--primary-color)] bg-[var(--primary-color)]/10">
-                          #{rankedOrder.indexOf(interview.id) + 1}
-                        </div>
-                      )}
                       <div
                         className="w-10 h-10 rounded-full flex items-center justify-center text-white font-medium"
                         style={{ backgroundColor: "var(--primary-color)" }}
@@ -461,6 +456,11 @@ export function InterviewListPage() {
                       </div>
                     </div>
                     <div className="flex items-center gap-3">
+                      {rankedOrder && (
+                        <div className="w-8 h-8 rounded-lg flex items-center justify-center text-sm font-bold border-2 border-[var(--primary-color)] text-[var(--primary-color)] bg-[var(--primary-color)]/10">
+                          #{rankedOrder.indexOf(interview.id) + 1}
+                        </div>
+                      )}
                       <div className="w-12 flex justify-center">
                         {isLoading && (
                           <div className="w-6 h-6 border-2 border-[var(--border-color)] border-t-[var(--primary-color)] rounded-full animate-spin" />
