@@ -102,19 +102,16 @@ export function InterviewListPage() {
   }, []);
 
   async function handleScoreAll() {
-    const uncachedInterviews = interviews.filter(
-      (interview) => !analysisResults[interview.id]
-    );
-
-    if (uncachedInterviews.length === 0) {
+    if (interviews.length === 0) {
       return;
     }
 
+    setAnalysisResults({});
     setIsScoring(true);
-    setLoadingIds(new Set(uncachedInterviews.map((i) => i.id)));
+    setLoadingIds(new Set(interviews.map((i) => i.id)));
 
     const results = await Promise.allSettled(
-      uncachedInterviews.map(async (interview) => {
+      interviews.map(async (interview) => {
         const analysis = await analyzeWithRetry(interview, API_KEY);
         setAnalysisResults({
           ...analysisResultsStore.get(),
