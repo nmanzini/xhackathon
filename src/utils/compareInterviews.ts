@@ -71,6 +71,8 @@ EVALUATION CRITERIA (weighted by importance):
    - Is the code clean and well-structured?
    - Does it handle edge cases properly?
 
+IMPORTANT: An incomplete interview (very short, minimal interaction, no real problem-solving attempt, or no working solution) should ALWAYS rank below a completed interview where the candidate made a genuine attempt, even if that attempt was imperfect. A candidate who shows up and tries is better than one who doesn't engage.
+
 Compare both candidates across all three criteria, weighting them as indicated. Determine which candidate performed better overall. If they are essentially equal, you may declare a tie, but prefer to pick a winner when there is any meaningful difference.`;
 }
 
