@@ -2,17 +2,18 @@ import { useState, useRef, useEffect } from "react";
 import { useParams, Link } from "react-router-dom";
 import { TranscriptView } from "../components/TranscriptView";
 import { ReviewCodeViewer } from "../components/ReviewCodeViewer";
-import { mockInterviews } from "../data/mockInterviews";
+import { interviewsStore, useStore } from "../stores";
 
 export function ReviewPage() {
   const { id } = useParams<{ id: string }>();
+  const [interviews] = useStore(interviewsStore);
   const [timelinePosition, setTimelinePosition] = useState(0);
   const [direction, setDirection] = useState<"forward" | "backward">("forward");
   const [showSettings, setShowSettings] = useState(false);
   const scrollContainerRef = useRef<HTMLDivElement>(null);
   const lastPositionRef = useRef<number>(0);
 
-  const interview = mockInterviews.find((i) => i.id === id);
+  const interview = interviews.find((i) => i.id === id);
   const totalSteps = interview?.transcript.length ?? 0;
 
   useEffect(() => {

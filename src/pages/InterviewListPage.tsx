@@ -1,10 +1,18 @@
 import { useState, useRef, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { mockInterviews } from "../data/mockInterviews";
 import { analyzeInterview } from "../utils/analyzeInterview";
 import { compareInterviewsToNumber } from "../utils/compareInterviews";
 import { asyncMergeSort } from "../utils/asyncMergeSort";
 import type { InterviewAnalysis, InterviewOutput } from "../types";
+import {
+  interviewsStore,
+  analysisResultsStore,
+  rankedOrderStore,
+  scoreFilterStore,
+  sortOrderStore,
+  useStore,
+} from "../stores";
+import type { SortOrder } from "../stores";
 
 const API_KEY = import.meta.env.VITE_XAI_API_KEY || "";
 
@@ -59,8 +67,6 @@ const SCORE_OPTIONS = [
   { value: "unscored", label: "Unscored", color: null },
 ];
 
-type SortOrder = "date" | "rank" | "score";
-
 const SORT_OPTIONS: { value: SortOrder; label: string }[] = [
   { value: "date", label: "Date Added" },
   { value: "rank", label: "Rank" },
@@ -68,17 +74,16 @@ const SORT_OPTIONS: { value: SortOrder; label: string }[] = [
 ];
 
 export function InterviewListPage() {
+  const [interviews] = useStore(interviewsStore);
+  const [analysisResults, setAnalysisResults] = useStore(analysisResultsStore);
+  const [rankedOrder, setRankedOrder] = useStore(rankedOrderStore);
+  const [scoreFilter, setScoreFilter] = useStore(scoreFilterStore);
+  const [sortOrder, setSortOrder] = useStore(sortOrderStore);
   const [search, setSearch] = useState("");
-  const [scoreFilter, setScoreFilter] = useState<string>("all");
   const [dropdownOpen, setDropdownOpen] = useState(false);
-  const [analysisResults, setAnalysisResults] = useState<
-    Record<string, InterviewAnalysis>
-  >({});
   const [loadingIds, setLoadingIds] = useState<Set<string>>(new Set());
   const [isScoring, setIsScoring] = useState(false);
   const [isRanking, setIsRanking] = useState(false);
-  const [rankedOrder, setRankedOrder] = useState<string[] | null>(null);
-  const [sortOrder, setSortOrder] = useState<SortOrder>("date");
   const navigate = useNavigate();
   const dropdownRef = useRef<HTMLDivElement>(null);
 
@@ -97,7 +102,7 @@ export function InterviewListPage() {
   }, []);
 
   async function handleScoreAll() {
-    const uncachedInterviews = mockInterviews.filter(
+    const uncachedInterviews = interviews.filter(
       (interview) => !analysisResults[interview.id]
     );
 
@@ -111,10 +116,10 @@ export function InterviewListPage() {
     const results = await Promise.allSettled(
       uncachedInterviews.map(async (interview) => {
         const analysis = await analyzeWithRetry(interview, API_KEY);
-        setAnalysisResults((prev) => ({
-          ...prev,
+        setAnalysisResults({
+          ...analysisResultsStore.get(),
           [interview.id]: analysis,
-        }));
+        });
         setLoadingIds((prev) => {
           const next = new Set(prev);
           next.delete(interview.id);
@@ -138,11 +143,11 @@ export function InterviewListPage() {
     console.log(
       `[Ranking] API Key present: ${!!API_KEY}, length: ${API_KEY.length}`
     );
-    console.log(`[Ranking] Total interviews to rank: ${mockInterviews.length}`);
+    console.log(`[Ranking] Total interviews to rank: ${interviews.length}`);
     setIsRanking(true);
     try {
       const sorted = await asyncMergeSort(
-        mockInterviews,
+        interviews,
         (a: InterviewOutput, b: InterviewOutput) => {
           console.log(
             `[Ranking] Comparing: ${a.input.userInfo.name} vs ${b.input.userInfo.name}`
@@ -165,7 +170,7 @@ export function InterviewListPage() {
     }
   }
 
-  const filteredInterviews = mockInterviews.filter((interview) => {
+  const filteredInterviews = interviews.filter((interview) => {
     const matchesSearch = interview.input.userInfo.name
       .toLowerCase()
       .includes(search.toLowerCase());
