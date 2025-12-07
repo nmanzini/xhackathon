@@ -1,9 +1,10 @@
 import { useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { mockInterviews } from "../data/mockInterviews";
 
 export function InterviewListPage() {
   const [search, setSearch] = useState("");
+  const navigate = useNavigate();
 
   const filteredInterviews = mockInterviews.filter((interview) =>
     interview.input.userInfo.name.toLowerCase().includes(search.toLowerCase())
@@ -11,7 +12,7 @@ export function InterviewListPage() {
 
   return (
     <div className="min-h-screen bg-[var(--bg-primary)] p-8">
-      <h1 className="text-2xl font-semibold text-[var(--text-primary)] mb-6">
+      <h1 className="text-4xl font-semibold text-[var(--text-primary)] mb-6">
         Interviews
       </h1>
       <div className="relative mb-8">
@@ -71,7 +72,8 @@ export function InterviewListPage() {
             return (
               <div
                 key={interview.id}
-                className="block p-5 rounded-lg border border-[var(--border-color)] bg-[var(--card-bg)] shadow-[var(--shadow-md)] transition-all duration-200"
+                onClick={() => navigate(`/analyst/${interview.id}`)}
+                className="block p-5 rounded-lg border border-[var(--border-color)] bg-[var(--card-bg)] shadow-[var(--shadow-md)] transition-all duration-200 cursor-pointer hover:bg-[var(--card-bg-hover)]"
               >
                 <div className="flex justify-between items-start">
                   <div className="flex items-center gap-3">
@@ -96,6 +98,7 @@ export function InterviewListPage() {
                     </div>
                     <Link
                       to={`/review/${interview.id}`}
+                      onClick={(e) => e.stopPropagation()}
                       className="px-3 py-2 rounded-lg text-[var(--text-secondary)] hover:text-[var(--primary-color)] hover:bg-[var(--card-bg-hover)] transition-all duration-200"
                     >
                       <svg
