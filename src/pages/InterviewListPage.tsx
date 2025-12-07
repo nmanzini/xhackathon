@@ -219,9 +219,7 @@ export function InterviewListPage() {
   return (
     <div className="h-screen bg-[var(--bg-primary)] p-8 flex flex-col">
       <div className="flex items-center justify-between mb-6 shrink-0">
-        <h1 className="text-4xl font-semibold text-[var(--text-primary)]">
-          Interviews
-        </h1>
+        <h1 className="text-3xl font-semibold text-[#2d2d2d]">Candidates</h1>
         <div className="flex gap-3">
           <button
             onClick={handleScoreAll}
@@ -277,7 +275,7 @@ export function InterviewListPage() {
         <div className="relative flex-1">
           <input
             type="text"
-            placeholder="Search interviews..."
+            placeholder="Search candidates..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             className="w-full px-5 py-4 pl-14 text-lg rounded-xl border border-[var(--border-color)] bg-[var(--input-bg)] text-[var(--text-primary)] placeholder-[var(--text-disabled)] focus:outline-none focus:border-[var(--primary-color)] shadow-[var(--shadow-sm)] transition-all"
@@ -404,7 +402,7 @@ export function InterviewListPage() {
         <div className="grid gap-4">
           {sortedInterviews.length === 0 ? (
             <div className="text-center py-12 text-[var(--text-secondary)]">
-              No interviews found matching "{search}"
+              No candidates found matching "{search}"
             </div>
           ) : (
             sortedInterviews.map((interview) => {

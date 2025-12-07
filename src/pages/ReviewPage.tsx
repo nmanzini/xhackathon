@@ -57,7 +57,7 @@ export function ReviewPage() {
             to="/reviews"
             className="text-[var(--primary-color)] hover:underline"
           >
-            Back to interviews
+            Back to candidates
           </Link>
         </div>
       </div>

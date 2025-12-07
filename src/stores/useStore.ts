@@ -10,3 +10,4 @@ export function useStore<T>(store: Store<T>): [T, (value: T) => void] {
   const value = useSyncExternalStore(store.subscribe, store.get, store.get);
   return [value, store.set];
 }
+

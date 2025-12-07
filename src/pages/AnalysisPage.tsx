@@ -300,7 +300,7 @@ export function AnalysisPage() {
             to="/reviews"
             className="text-[var(--primary-color)] hover:underline"
           >
-            Back to interviews
+            Back to candidates
           </Link>
         </div>
       </div>
@@ -340,7 +340,7 @@ export function AnalysisPage() {
             >
               ← Back
             </Link>
-            <h1 className="text-4xl font-semibold text-[var(--text-primary)]">
+            <h1 className="text-3xl font-semibold text-[#2d2d2d]">
               {interview.input.userInfo.name}
             </h1>
           </div>
